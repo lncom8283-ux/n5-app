@@ -167,6 +167,16 @@ small { color: #6b7280; line-height: 1.6; display: block; }
 <!-- ---------- 가타카나 화면 ---------- -->
 <div id="view-katakana" class="view">
 
+  <!-- 오늘의 학습 — 하루 1시간 분량을 앱이 정해줍니다 -->
+  <div class="card">
+    <div class="plan-head">
+      <b>오늘의 학습</b>
+      <span id="plan-time">0 / 60분</span>
+    </div>
+    <div class="bar"><div id="plan-bar"></div></div>
+    <div id="plan-steps"></div>
+  </div>
+
   <div class="card">
     <div class="label">방식</div>
     <div class="pick" id="mode-pick">
@@ -274,6 +284,7 @@ small { color: #6b7280; line-height: 1.6; display: block; }
   <div class="card">
     <h2>학습 기록</h2>
     <table>
+      <tr><td>오늘 공부한 시간</td><td id="st-time">0분</td></tr>
       <tr><td>오늘 푼 문제</td><td id="st-today">0</td></tr>
       <tr><td>연속 학습일</td><td id="st-streak">0일</td></tr>
       <tr><td>전체 푼 문제</td><td id="st-total">0</td></tr>
@@ -465,9 +476,11 @@ function makeHint(c) {
 const SAVE_KEY = 'n5app';
 
 let DATA = {
-  version: 2,
-  cards: {},      // 'ア': { ok:3, ng:1, box:2, due:'2026-08-09' }
-  daily: {},      // '2026-08-08': 40
+  version: 3,
+  cards: {},      // 'ア': { ok:3, ng:1, box:2, due:'2026-08-09', first:'2026-08-08' }
+  daily: {},      // 날짜별 푼 문제 수      '2026-08-08': 40
+  time:  {},      // 날짜별 공부한 시간(초)  '2026-08-08': 1800
+  pairDay: null,  // '헷갈리는 짝'을 마지막으로 끝낸 날
   lastStudy: null,
   streak: 0
 };
@@ -520,10 +533,13 @@ const BOX_NAMES = ['1 · 오늘 또', '2 · 1일 뒤', '3 · 3일 뒤', '4 · 7�
 
 /* 카드 기록 꺼내기 (없으면 새로 만듦) */
 function getCard(kana) {
-  if (!DATA.cards[kana]) DATA.cards[kana] = { ok: 0, ng: 0, box: 1, due: todayKey() };
+  if (!DATA.cards[kana]) {
+    DATA.cards[kana] = { ok: 0, ng: 0, box: 1, due: todayKey(), first: todayKey() };
+  }
   const c = DATA.cards[kana];
   if (!c.box) c.box = 1;                 // 예전 버전 기록도 문제없이 이어지도록
   if (!c.due) c.due = todayKey();
+  if (!c.first) c.first = '2000-01-01';  // 옛 기록은 '오늘 새로 배운 글자'로 세지 않음
   return c;
 }
 
@@ -562,6 +578,70 @@ function updateStreak(t) {
   if (DATA.lastStudy === t) return;                 // 오늘 이미 셈
   DATA.streak = (DATA.lastStudy === afterDays(-1)) ? DATA.streak + 1 : 1;
   DATA.lastStudy = t;
+}
+
+
+/* ================== 하루 분량 (순수 공부시간 1시간) ==================
+   "오늘 뭘 얼마나 하면 되는지"를 앱이 정해줍니다.
+   아래 두 숫자만 바꾸면 분량이 통째로 달라집니다.
+   =================================================================== */
+
+const DAILY_GOAL_MIN = 60;   // 하루 목표 공부시간(분)
+const NEW_PER_DAY    = 12;   // 하루에 새로 배울 글자 수 상한
+
+/* 왜 새 글자에 상한을 두나?
+   오늘 배운 글자는 내일·모레 복습 부하로 되돌아옵니다.
+   하루에 40자씩 새로 넣으면 사흘 뒤 복습 대상이 100자를 넘어
+   1시간으로는 감당이 안 됩니다. 12자면 복습량이 안정적으로 유지돼요.
+   (12자 × 4일 = 기본 46자를 나흘에 끝내는 속도입니다)               */
+
+function studySecToday() { return DATA.time[todayKey()] || 0; }
+
+function addStudyTime(sec) {
+  const t = todayKey();
+  DATA.time[t] = (DATA.time[t] || 0) + sec;
+  saveData();
+}
+
+/* 오늘 처음 배운 글자 수 */
+function newTodayCount() {
+  const t = todayKey();
+  return Object.keys(DATA.cards).filter(k => DATA.cards[k].first === t).length;
+}
+function newQuotaLeft() { return Math.max(0, NEW_PER_DAY - newTodayCount()); }
+
+/* '오늘의 학습' 카드를 다시 그립니다 */
+function renderPlan() {
+  const min = Math.floor(studySecToday() / 60);
+  $('plan-time').textContent = min + ' / ' + DAILY_GOAL_MIN + '분';
+  $('plan-bar').style.width = Math.min(100, min / DAILY_GOAL_MIN * 100) + '%';
+
+  const due      = dueCount();
+  const newLeft  = newQuotaLeft();
+  const pairDone = (DATA.pairDay === todayKey());
+
+  const steps = [
+    { done: due === 0,
+      text: '🔁 오늘 복습' + (due ? ' — ' + due + '자 남음' : ' — 완료') },
+    { done: newLeft === 0,
+      text: '📇 새 글자 ' + NEW_PER_DAY + '자' +
+            (newLeft ? ' — ' + newLeft + '자 남음' : ' — 완료') },
+    { done: pairDone,
+      text: '🔀 헷갈리는 짝 한 세트' + (pairDone ? ' — 완료' : '') }
+  ];
+
+  let html = steps.map(s =>
+    '<div class="step' + (s.done ? ' done' : '') + '">' +
+    (s.done ? '✅' : '⬜') + ' ' + s.text + '</div>').join('');
+
+  if (min >= DAILY_GOAL_MIN) {
+    html += '<div class="step-msg">🎉 오늘 1시간 채웠습니다! ' +
+            '더 해도 좋지만 여기서 멈춰도 충분해요.</div>';
+  } else if (steps.every(s => s.done)) {
+    html += '<div class="step-msg">✨ 오늘 할 일을 다 끝냈습니다. ' +
+            '남은 시간은 플래시카드로 가볍게 훑어보세요.</div>';
+  }
+  $('plan-steps').innerHTML = html;
 }
 
 
@@ -741,6 +821,7 @@ function restart() {
   $('mode-empty').classList.add('hidden');
 
   refreshDueBadge();
+  renderPlan();
 
   if (isFlash) {
     KK.deck = buildDeck();
@@ -820,7 +901,8 @@ function makeQuestions() {
 
     // 새 글자는 섞지 않습니다. ALL이 기본 46자 → 탁음 → 요음 순서라
     // 그대로 앞에서 뽑으면 쉬운 것부터 자연스럽게 들어옵니다.
-    const fresh = ALL.filter(c => !DATA.cards[c.kana]);
+    // slice로 하루 상한(NEW_PER_DAY)까지만 잘라 복습 부하를 지킵니다.
+    const fresh = ALL.filter(c => !DATA.cards[c.kana]).slice(0, newQuotaLeft());
 
     let picked = shuffle(due).slice(0, QUIZ_LEN);
     if (picked.length < QUIZ_LEN) {
@@ -889,6 +971,7 @@ function answer(choice, btn) {
   recordAnswer(q.answer.kana, correct);
   speak(q.answer.kana);
   refreshDueBadge();
+  renderPlan();
 
   if (correct) {
     KK.quiz.score++;
@@ -913,7 +996,12 @@ function nextQuestion() {
 function showResult() {
   $('mode-quiz').classList.add('hidden');
   $('mode-result').classList.remove('hidden');
+
+  // '헷갈리는 짝'을 한 세트 끝내면 오늘 할 일에 체크가 됩니다
+  if (KK.mode === 'pair') { DATA.pairDay = todayKey(); saveData(); }
+
   refreshDueBadge();
+  renderPlan();
 
   const s = KK.quiz.score, n = KK.quiz.qs.length;
   $('result-score').textContent = s + ' / ' + n;
@@ -950,6 +1038,8 @@ function renderStats() {
 
   // --- 학습 기록 ---
   const t = todayKey();
+  const min = Math.floor(studySecToday() / 60);
+  $('st-time').textContent = min + '분 / ' + DAILY_GOAL_MIN + '분';
   $('st-today').textContent = (DATA.daily[t] || 0) + '개';
   $('st-streak').textContent = (DATA.streak || 0) + '일';
 
@@ -1017,10 +1107,12 @@ function importData(event) {
 
 function resetData() {
   if (!confirm('정말 모든 학습 기록을 지울까요? 되돌릴 수 없습니다.')) return;
-  DATA = { version: 2, cards: {}, daily: {}, lastStudy: null, streak: 0 };
+  DATA = { version: 3, cards: {}, daily: {}, time: {}, pairDay: null,
+           lastStudy: null, streak: 0 };
   saveData();
   renderStats();
   refreshDueBadge();
+  renderPlan();
   alert('기록을 지웠습니다.');
 }
 
@@ -1035,6 +1127,23 @@ document.querySelectorAll('#mode-pick button').forEach(b =>
   b.onclick = function () { setMode(b.dataset.mode); });
 
 if ('speechSynthesis' in window) speechSynthesis.getVoices();
+
+/* ---------- 공부시간 재기 ----------
+   창을 켜둔 시간이 아니라 "실제로 하고 있는 시간"만 셉니다.
+   10초마다 확인해서, 화면이 보이는 중이고 최근 90초 안에 움직임이 있었을 때만
+   10초를 더합니다. 잠깐 자리를 비우거나 다른 탭을 보면 그동안은 세지 않아요.  */
+let lastActive = Date.now();
+
+['click', 'keydown', 'touchstart'].forEach(function (ev) {
+  document.addEventListener(ev, function () { lastActive = Date.now(); });
+});
+
+setInterval(function () {
+  if (document.hidden) return;                    // 다른 탭·다른 창을 보는 중
+  if (Date.now() - lastActive > 90000) return;    // 90초 넘게 조용함 = 쉬는 중
+  addStudyTime(10);
+  renderPlan();
+}, 10000);
 
 restart();
 </script>
