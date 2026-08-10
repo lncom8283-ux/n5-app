@@ -160,6 +160,21 @@ button { font-family: inherit; }
   background: #e8f5ec; color: #14612f; font-size: 13px; font-weight: 600;
 }
 
+/* --- 문법 화면 --- */
+.g-prompt { font-size: 44px; text-align: center; margin: 10px 0 4px; line-height: 1.3; }
+.g-prompt.small { font-size: 22px; line-height: 1.5; }
+.g-sub { text-align: center; font-size: 14px; color: #6b7280; margin-bottom: 10px; }
+.g-ask { text-align: center; font-size: 14px; font-weight: 700; color: #2f6fed; margin-bottom: 14px; }
+.choices.one { grid-template-columns: 1fr; }
+.choices.one button { font-size: 18px; text-align: left; padding: 14px; }
+.g-item { border-bottom: 1px solid #eef0f3; padding: 13px 0; }
+.g-item:last-child { border-bottom: 0; }
+.g-form { font-size: 21px; font-weight: 700; }
+.g-mean { font-size: 14px; color: #2f6fed; font-weight: 700; margin-top: 2px; }
+.g-conn { font-size: 12.5px; color: #6b7280; margin-top: 4px; }
+.g-ex { font-size: 15px; margin-top: 7px; line-height: 1.55; }
+.g-ex span { color: #6b7280; font-size: 13px; }
+
 /* --- 통계 표 --- */
 table { width: 100%; border-collapse: collapse; font-size: 14px; }
 td { padding: 7px 4px; border-bottom: 1px solid #eef0f3; }
@@ -178,7 +193,7 @@ small { color: #6b7280; line-height: 1.6; display: block; }
 
 <nav>
   <button id="nav-katakana" class="on" onclick="showView('katakana')">가타카나</button>
-  <button id="nav-soon"                onclick="showView('soon')">단어</button>
+  <button id="nav-grammar"             onclick="showView('grammar')">문법·단어</button>
   <button id="nav-stats"               onclick="showView('stats')">통계</button>
   <button id="nav-settings"            onclick="showView('settings')">설정</button>
 </nav>
@@ -190,7 +205,7 @@ small { color: #6b7280; line-height: 1.6; display: block; }
   <div class="card">
     <div class="plan-head">
       <b>오늘의 학습</b>
-      <span id="plan-time">0 / 60분</span>
+      <span id="plan-time">0 / 35분</span>
     </div>
     <div class="bar"><div id="plan-bar"></div></div>
     <div id="plan-steps"></div>
@@ -277,15 +292,67 @@ small { color: #6b7280; line-height: 1.6; display: block; }
   </div>
 </div>
 
-<!-- ---------- 단어 (아직 준비 중) ---------- -->
-<div id="view-soon" class="view hidden">
-  <div class="card center">
-    <h2>🚧 준비 중</h2>
-    <small>
-      단어 · 문법 빈칸 카드가 다음 단계로 여기에 들어옵니다.<br>
-      지금 만든 복습 시스템을 그대로 물려받아요.<br><br>
-      우선 가타카나부터 10일 안에 끝냅시다!
-    </small>
+<!-- ---------- 문법·단어 (시나공 교재 데이터) ---------- -->
+<div id="view-grammar" class="view hidden">
+
+  <!-- 자료를 읽는 중 -->
+  <div class="card center" id="g-loading">
+    <small>📖 문법 자료를 불러오는 중…</small>
+  </div>
+
+  <!-- 자료를 못 읽었을 때 -->
+  <div class="card center hidden" id="g-error">
+    <h2>⚠️ 자료를 못 읽었어요</h2>
+    <small id="g-error-msg"></small>
+  </div>
+
+  <div id="g-main" class="hidden">
+    <div class="card">
+      <div class="label">무엇을 연습할까요?</div>
+      <div class="pick" id="g-mode-pick">
+        <button data-gmode="group" class="on">동사 그룹</button>
+        <button data-gmode="conj">활용 ます·ない</button>
+        <button data-gmode="point">문형</button>
+        <button data-gmode="vocab">단어</button>
+        <button data-gmode="prac">기출 문제</button>
+      </div>
+      <small id="g-note"></small>
+      <div class="row" style="margin-top:10px">
+        <button class="btn" onclick="showGrammarList()">📖 문형 훑어보기</button>
+        <button class="btn primary" onclick="startGrammarQuiz()">↺ 새 세트</button>
+      </div>
+    </div>
+
+    <!-- 문제 -->
+    <div id="g-quiz">
+      <div class="card">
+        <div class="bar"><div id="g-bar"></div></div>
+        <div class="center"><small id="g-progress">1 / 10 문제</small></div>
+        <div class="g-prompt" id="g-prompt"></div>
+        <div class="g-sub" id="g-psub"></div>
+        <div class="g-ask" id="g-ask"></div>
+        <div class="choices" id="g-choices"></div>
+        <div class="msg" id="g-msg"></div>
+        <div id="g-tip"></div>
+      </div>
+      <button class="btn primary wide hidden" id="g-next" onclick="gNext()">다음 문제 →</button>
+    </div>
+
+    <!-- 세트 결과 -->
+    <div id="g-result" class="hidden">
+      <div class="card center">
+        <h2>세트 완료!</h2>
+        <div class="big" id="g-score">0 / 10</div>
+        <div id="g-comment"></div>
+      </div>
+      <button class="btn primary wide" onclick="startGrammarQuiz()">한 세트 더 풀기</button>
+    </div>
+
+    <!-- 문형 훑어보기 -->
+    <div id="g-list" class="hidden">
+      <div class="card" id="g-list-body"></div>
+      <button class="btn wide" onclick="startGrammarQuiz()">← 연습으로 돌아가기</button>
+    </div>
   </div>
 </div>
 
@@ -605,7 +672,7 @@ function updateStreak(t) {
    아래 두 숫자만 바꾸면 분량이 통째로 달라집니다.
    =================================================================== */
 
-const DAILY_GOAL_MIN = 60;   // 하루 목표 공부시간(분)
+const DAILY_GOAL_MIN = 35;   // 하루 목표 공부시간(분) — 워밍업10 + 단어10 + 문법20 기준
 const NEW_PER_DAY    = 12;   // 하루에 새로 배울 글자 수 상한
 
 /* 왜 새 글자에 상한을 두나?
@@ -669,11 +736,12 @@ function renderPlan() {
 function $(id) { return document.getElementById(id); }
 
 function showView(name) {
-  ['katakana', 'soon', 'stats', 'settings'].forEach(v => {
+  ['katakana', 'grammar', 'stats', 'settings'].forEach(v => {
     $('view-' + v).classList.toggle('hidden', v !== name);
     $('nav-' + v).classList.toggle('on', v === name);
   });
-  if (name === 'stats') renderStats();
+  if (name === 'stats')   renderStats();
+  if (name === 'grammar') openGrammar();
 }
 
 function shuffle(arr) {
@@ -1043,17 +1111,42 @@ function showResult() {
 
 /* ======================= 8) 통계 · 설정 ======================= */
 
+/* 통계에 카드 이름을 보기 좋게 — 가타카나 글자와 문법 카드가 섞여 있습니다.
+   문법 카드의 key는 'masu:あう·만나다' 같은 모양이라 그대로 보여주면 지저분해요. */
+function cardLabel(k) {
+  if (BY_KANA[k])
+    return '<span style="font-size:22px">' + k + '</span> ' +
+           '<small style="display:inline">' + BY_KANA[k].ko + '</small>';
+
+  const cut  = k.indexOf(':');
+  const kind = (cut < 0) ? '' : k.slice(0, cut);
+  const rest = (cut < 0) ? k  : k.slice(cut + 1);
+  const name = { vg: '동사 그룹', masu: 'ます형', nai: 'ない형',
+                 gp: '문형', voc: '단어', pr: '기출 문제' }[kind] || '문법';
+
+  if (kind === 'gp') {
+    const p = GPOINTS.find(x => ('gp:' + x.unit + ':' + x.id) === k);
+    return (p ? p.form : rest) + ' <small style="display:inline">문형</small>';
+  }
+  if (kind === 'pr') return '기출 문제 <small style="display:inline">' + rest + '번</small>';
+
+  return rest.replace('·', ' ') + ' <small style="display:inline">' + name + '</small>';
+}
+
 function renderStats() {
   // --- 복습 상자 분포 ---
+  // 가타카나와 문법 카드는 같은 상자 시스템을 쓰지만, 세는 건 나눠서 보여줍니다.
+  const kanaKeys = Object.keys(DATA.cards).filter(k =>  BY_KANA[k]);
+  const grKeys   = Object.keys(DATA.cards).filter(k => !BY_KANA[k]);
+
   const counts = [0, 0, 0, 0, 0];
-  Object.keys(DATA.cards).forEach(k => {
-    const box = DATA.cards[k].box || 1;
-    counts[box - 1]++;
-  });
+  kanaKeys.forEach(k => { counts[(DATA.cards[k].box || 1) - 1]++; });
+
   $('st-boxes').innerHTML =
     BOX_NAMES.map((name, i) =>
       '<tr><td>' + name + '</td><td>' + counts[i] + '자</td></tr>').join('') +
-    '<tr><td><small>오늘 복습 대상</small></td><td>' + dueCount() + '자</td></tr>';
+    '<tr><td><small>오늘 복습 대상</small></td><td>' + dueCount() + '자</td></tr>' +
+    '<tr><td><small>문법·단어 카드</small></td><td>' + grKeys.length + '개</td></tr>';
 
   // --- 학습 기록 ---
   const t = todayKey();
@@ -1068,7 +1161,7 @@ function renderStats() {
 
   $('st-total').textContent = (ok + ng) + '개';
   $('st-rate').textContent = (ok + ng) ? Math.round(ok / (ok + ng) * 100) + '%' : '-';
-  $('st-seen').textContent = kanas.length + '자';
+  $('st-seen').textContent = kanaKeys.length + '자';
 
   // --- 자주 틀리는 글자 ---
   const worst = kanas
@@ -1077,12 +1170,9 @@ function renderStats() {
     .slice(0, 5);
 
   $('st-worst').innerHTML = worst.length
-    ? worst.map(k => {
-        const ko = BY_KANA[k] ? BY_KANA[k].ko : '';
-        return '<tr><td style="font-size:22px">' + k +
-               ' <small style="display:inline">' + ko + '</small></td>' +
-               '<td>' + DATA.cards[k].ng + '번 틀림</td></tr>';
-      }).join('')
+    ? worst.map(k =>
+        '<tr><td>' + cardLabel(k) + '</td>' +
+        '<td>' + DATA.cards[k].ng + '번 틀림</td></tr>').join('')
     : '<tr><td><small>아직 기록이 없어요</small></td></tr>';
 
   // --- D-day ---
@@ -1136,6 +1226,380 @@ function resetData() {
 }
 
 
+/* ==================== 8-2) 문법·단어 (시나공 교재) ====================
+
+   교재 내용은 index.html 안에 적지 않고 옆에 있는 json 파일에서 읽어옵니다.
+   그래서 단원이 늘어나도 코드는 그대로 두고,
+   아래 목록에 파일 이름 한 줄만 더 쓰면 됩니다.                        */
+
+const GRAMMAR_FILES = [
+  'n5-grammar-sina01.json'
+  // 'n5-grammar-sina02.json',   ← 단원이 생기면 이렇게 추가
+];
+
+let GUNITS  = [];      // 읽어온 단원 원본
+let GVERBS  = [];      // 동사 전체   {kana, read, ko, group, exception}
+let GPOINTS = [];      // 문형 전체
+let GVOCAB  = [];      // 단어 전체
+let GPRAC   = [];      // 교재 문제 전체
+let gLoaded = false;
+
+/* 문법 탭을 처음 눌렀을 때 한 번만 파일을 읽습니다 */
+async function openGrammar() {
+  if (gLoaded) return;
+  try {
+    // 앞서 읽다가 실패했을 수도 있으니 비우고 새로 시작합니다 (같은 내용이 두 번 쌓이지 않게)
+    GUNITS = []; GVERBS = []; GPOINTS = []; GVOCAB = []; GPRAC = [];
+    $('g-error').classList.add('hidden');
+
+    for (const name of GRAMMAR_FILES) {
+      const res = await fetch(name);
+      if (!res.ok) throw new Error(name + ' — ' + res.status);
+      GUNITS.push(await res.json());
+    }
+  } catch (e) {
+    $('g-loading').classList.add('hidden');
+    $('g-error').classList.remove('hidden');
+    $('g-error-msg').innerHTML =
+      '읽지 못한 파일: <b>' + e.message + '</b><br><br>' +
+      '컴퓨터에서 index.html을 <b>더블클릭</b>해서 열면, 브라우저가 보안 때문에 ' +
+      '옆에 있는 json 파일을 못 읽습니다. 이건 앱이 고장난 게 아닙니다.<br><br>' +
+      '👉 <b>깃허브에 올린 주소(폰에서 보는 그 주소)로 열면 정상으로 보입니다.</b>';
+    return;
+  }
+  buildGrammarPools();
+  gLoaded = true;
+  $('g-loading').classList.add('hidden');
+  $('g-main').classList.remove('hidden');
+  setGrammarMode('group');
+}
+
+/* 여러 단원을 한 덩어리로 합칩니다 */
+function buildGrammarPools() {
+  GUNITS.forEach((u, ui) => {
+    const vg = u.verbGroups || {};
+
+    [1, 2, 3].forEach(g => {
+      (vg['group' + g] || []).forEach(v => GVERBS.push(
+        { kana: v.kana, read: v.read, ko: v.ko, group: g, exception: false }));
+    });
+
+    // 겉보기엔 2그룹인데 사실 1그룹인 예외들
+    if (vg.exceptions_group1 && vg.exceptions_group1.list) {
+      vg.exceptions_group1.list.forEach(v => GVERBS.push(
+        { kana: v.kana, read: v.read, ko: v.ko, group: 1, exception: true }));
+    }
+
+    (u.grammarPoints || []).forEach(p    => GPOINTS.push(Object.assign({ unit: ui }, p)));
+    (u.vocab         || []).forEach(v    => GVOCAB.push(v));
+    (u.practice      || []).forEach((p, i) => GPRAC.push(Object.assign({ unit: ui, idx: i }, p)));
+  });
+}
+
+
+/* ---------- 활용 만들기 ----------
+   1그룹은 맨 끝 글자를 다른 줄로 옮겨서 만듭니다.
+     ます형 → う단을 い단으로   (かく → かきます)
+     ない형 → う단을 あ단으로   (かく → かかない)
+   단 ない형에서 う로 끝나는 동사만 あ가 아니라 わ입니다. (あう → あわない)  */
+
+const U_TO_I = { 'う':'い', 'く':'き', 'ぐ':'ぎ', 'す':'し', 'つ':'ち',
+                 'ぬ':'に', 'ぶ':'び', 'む':'み', 'る':'り' };
+const U_TO_A = { 'う':'わ', 'く':'か', 'ぐ':'が', 'す':'さ', 'つ':'た',
+                 'ぬ':'な', 'ぶ':'ば', 'む':'ま', 'る':'ら' };
+
+function conj(v, type) {
+  const k = v.kana, head = k.slice(0, -1), last = k.slice(-1);
+  const tail = (type === 'masu') ? 'ます' : 'ない';
+
+  if (v.group === 3) {                       // 불규칙 — 통째로 외우는 두 개
+    if (k === 'くる') return (type === 'masu') ? 'きます' : 'こない';
+    if (k === 'する') return (type === 'masu') ? 'します' : 'しない';
+    return null;
+  }
+  if (v.group === 2) return head + tail;     // る를 떼고 붙이기
+
+  const map = (type === 'masu') ? U_TO_I : U_TO_A;
+  return map[last] ? head + map[last] + tail : null;
+}
+
+/* 오답 보기 — 아무 글자나 만들지 않고 "실제로 자주 하는 실수"로 만듭니다 */
+function conjWrongs(v, type, correct) {
+  const k = v.kana, head = k.slice(0, -1), last = k.slice(-1);
+  const tail = (type === 'masu') ? 'ます' : 'ない';
+  const cand = [];
+
+  // 3그룹은 불규칙이라, 헷갈리기 쉬운 나머지 불규칙 형태를 오답으로 씁니다
+  if (v.group === 3) {
+    const irr = ['きます', 'します', 'こない', 'しない', k + tail];
+    return irr.filter((x, i) => x !== correct && irr.indexOf(x) === i);
+  }
+
+  cand.push(k + tail);                                        // 원형에 그냥 붙이기
+  cand.push(head + tail);                                     // 2그룹 규칙(る 떼기)을 잘못 적용
+  if (U_TO_I[last]) cand.push(head + U_TO_I[last] + tail);    // い단으로 바꿈
+  if (U_TO_A[last]) cand.push(head + U_TO_A[last] + tail);    // あ단으로 바꿈
+  if (type === 'nai' && last === 'う') cand.push(head + 'あ' + tail);   // わ 대신 あ
+
+  return cand.filter((x, i) => x !== correct && cand.indexOf(x) === i);
+}
+
+
+/* ---------- 문제 만들기 ----------
+   모든 문제는 같은 모양입니다:
+   { key, prompt, sub, ask, choices[], answer(정답 번호), explain }
+   key 는 복습 상자에 기록할 이름입니다. 가타카나와 겹치지 않게 앞에 종류를 붙입니다. */
+
+function qGroup() {
+  return GVERBS.map(v => ({
+    key: 'vg:' + v.kana + '·' + v.ko,       // きる(입다)와 きる(자르다)를 구분
+    prompt: v.kana,
+    sub: v.read + ' · ' + v.ko,
+    ask: '몇 그룹 동사일까요?',
+    choices: ['1그룹', '2그룹', '3그룹'],
+    answer: v.group - 1,
+    explain: groupWhy(v)
+  }));
+}
+
+function groupWhy(v) {
+  if (v.group === 3)
+    return '<b>する·くる</b> 딱 두 개만 3그룹입니다. 이건 외우면 끝!';
+  if (v.exception)
+    return '⚠️ <b>예외</b>입니다. る 앞이 이·에 소리라서 2그룹처럼 보이지만 실제로는 1그룹이에요. ' +
+           '이런 단어(はいる·はしる·しる·きる·いる·かえる)는 통째로 외웁니다.';
+  if (v.group === 2)
+    return 'る로 끝나고 그 앞이 <b>이·에 소리</b>(' + v.kana.slice(-2, -1) + ')라서 2그룹입니다.';
+  return (v.kana.slice(-1) === 'る')
+    ? 'る로 끝나지만 앞이 이·에 소리가 아니라서 <b>1그룹</b>입니다.'
+    : 'る로 끝나지 않으니 <b>1그룹</b>입니다.';
+}
+
+function qConj() {
+  const out = [];
+  GVERBS.forEach(v => {
+    ['masu', 'nai'].forEach(type => {
+      const correct = conj(v, type);
+      if (!correct) return;
+      const wrongs = conjWrongs(v, type, correct);
+      if (wrongs.length < 2) return;
+
+      const choices = shuffle([correct].concat(wrongs.slice(0, 3)));
+      out.push({
+        key: type + ':' + v.kana + '·' + v.ko,
+        prompt: v.kana,
+        sub: v.read + ' · ' + v.ko + ' · ' + v.group + '그룹' + (v.exception ? ' (예외)' : ''),
+        ask: (type === 'masu') ? 'ます형(~합니다)으로 바꾸면?' : 'ない형(~하지 않는다)으로 바꾸면?',
+        choices: choices,
+        answer: choices.indexOf(correct),
+        explain: conjWhy(v, type)
+      });
+    });
+  });
+  return out;
+}
+
+function conjWhy(v, type) {
+  const last = v.kana.slice(-1);
+  if (v.group === 3)
+    return '3그룹은 규칙이 없습니다. <b>くる→きます / こない</b>, <b>する→します / しない</b> 통째로 외우기.';
+  if (v.group === 2)
+    return '2그룹은 <b>る를 떼고</b> ' + ((type === 'masu') ? 'ます' : 'ない') + '를 붙입니다.';
+  if (type === 'masu')
+    return '1그룹은 끝의 <b>う단 → い단</b>으로 바꾸고 ます. (' + last + ' → ' + U_TO_I[last] + ')';
+  return (last === 'う')
+    ? '1그룹은 끝의 <b>う단 → あ단</b> + ない. 그런데 <b>う로 끝나면 あ가 아니라 わ</b>입니다. (う → わ)'
+    : '1그룹은 끝의 <b>う단 → あ단</b>으로 바꾸고 ない. (' + last + ' → ' + U_TO_A[last] + ')';
+}
+
+function qPoint() {
+  const all = GPOINTS.map(p => p.meaning);
+  return GPOINTS.map(p => {
+    const choices = shuffle([p.meaning].concat(
+      shuffle(all.filter(m => m !== p.meaning)).slice(0, 3)));
+    return {
+      key: 'gp:' + p.unit + ':' + p.id,
+      prompt: p.form, small: true,
+      sub: '',
+      ask: '무슨 뜻일까요?',
+      choices: choices,
+      answer: choices.indexOf(p.meaning),
+      explain: '<b>' + p.form + '</b> — ' + p.meaning +
+               '<div class="g-conn">접속: ' + p.connect + '</div>' +
+               ((p.examples && p.examples[0])
+                 ? '<div class="g-ex">' + p.examples[0].jp +
+                   '<br><span>' + p.examples[0].ko + '</span></div>' : '')
+    };
+  });
+}
+
+function qVocab() {
+  const all = GVOCAB.map(v => v.ko);
+  return GVOCAB.map(v => {
+    const choices = shuffle([v.ko].concat(
+      shuffle(all.filter(k => k !== v.ko)).slice(0, 3)));
+    return {
+      key: 'voc:' + v.kana,
+      prompt: v.kana, small: true,
+      sub: '',
+      ask: '무슨 뜻일까요?',
+      choices: choices,
+      answer: choices.indexOf(v.ko),
+      explain: '<b>' + v.kana + '</b> (' + v.read + ') — ' + v.ko
+    };
+  });
+}
+
+function qPrac() {
+  return GPRAC.map(p => ({
+    key: 'pr:' + p.unit + ':' + p.idx,
+    prompt: p.q, small: true,
+    sub: '',
+    ask: '괄호에 알맞은 것은?',
+    choices: p.choices.slice(),
+    answer: p.answer,          // 이 json은 0부터 세는 번호입니다
+    explain: p.explain
+  }));
+}
+
+
+/* ---------- 문법 퀴즈 진행 ---------- */
+
+const G_QUIZ_LEN = 10;
+
+let GQ = { mode: 'group', qs: [], i: 0, score: 0, locked: false };
+
+const G_NOTE = {
+  group: '동사를 보고 1·2·3그룹을 고릅니다. 그룹을 알아야 활용을 할 수 있어요.',
+  conj:  'ます형·ない형으로 바꾸는 연습입니다. 틀리면 규칙을 다시 보여줍니다.',
+  point: '교재 문형을 보고 뜻을 고릅니다.',
+  vocab: '교재에 나온 단어입니다.',
+  prac:  '교재 문제 형식 그대로입니다.'
+};
+
+function setGrammarMode(m) {
+  GQ.mode = m;
+  document.querySelectorAll('#g-mode-pick button').forEach(b =>
+    b.classList.toggle('on', b.dataset.gmode === m));
+  $('g-note').textContent = G_NOTE[m] || '';
+  startGrammarQuiz();
+}
+
+function grammarPool(m) {
+  if (m === 'group') return qGroup();
+  if (m === 'conj')  return qConj();
+  if (m === 'point') return qPoint();
+  if (m === 'vocab') return qVocab();
+  return qPrac();
+}
+
+/* 복습 기한이 된 카드를 먼저 냅니다 — 가타카나와 같은 방식 */
+function gPick(list) {
+  const due  = list.filter(q =>  isDue(q.key));
+  const rest = list.filter(q => !isDue(q.key));
+  return shuffle(due).concat(shuffle(rest)).slice(0, G_QUIZ_LEN);
+}
+
+function startGrammarQuiz() {
+  $('g-list').classList.add('hidden');
+  $('g-result').classList.add('hidden');
+  $('g-quiz').classList.remove('hidden');
+
+  GQ.qs = gPick(grammarPool(GQ.mode));
+  GQ.i = 0;
+  GQ.score = 0;
+  gRender();
+}
+
+function gRender() {
+  const q = GQ.qs[GQ.i];
+  if (!q) return;
+  GQ.locked = false;
+
+  $('g-prompt').className = 'g-prompt' + (q.small ? ' small' : '');
+  $('g-prompt').textContent = q.prompt;
+  $('g-psub').textContent   = q.sub || '';
+  $('g-ask').textContent    = q.ask || '';
+  $('g-msg').textContent    = '';
+  $('g-tip').innerHTML      = '';
+  $('g-next').classList.add('hidden');
+  $('g-progress').textContent = (GQ.i + 1) + ' / ' + GQ.qs.length + ' 문제';
+  $('g-bar').style.width = (GQ.i / GQ.qs.length * 100) + '%';
+
+  // 보기 글자가 길면 한 줄에 하나씩 (문형·기출 문제용)
+  const long = q.choices.some(c => c.length > 7);
+  const box = $('g-choices');
+  box.className = 'choices' + (long ? ' one' : '');
+  box.innerHTML = '';
+  q.choices.forEach((text, i) => {
+    const b = document.createElement('button');
+    b.textContent = text;
+    b.onclick = function () { gAnswer(i, b); };
+    box.appendChild(b);
+  });
+}
+
+function gAnswer(pick, btn) {
+  if (GQ.locked) return;               // 한 문제에 두 번 답하지 못하도록
+  GQ.locked = true;
+
+  const q = GQ.qs[GQ.i];
+  const correct = (pick === q.answer);
+
+  Array.from($('g-choices').children).forEach((b, i) => {
+    b.disabled = true;
+    if (i === q.answer) b.classList.add('correct');
+  });
+  if (!correct) btn.classList.add('wrong');
+
+  recordAnswer(q.key, correct);        // 가타카나와 똑같은 복습 상자에 들어갑니다
+  if (correct) GQ.score++;
+
+  $('g-msg').textContent = correct ? '⭕ 정답!' : '❌ 다시 봅시다';
+  $('g-msg').style.color = correct ? '#14612f' : '#8a1f1c';
+  if (q.explain)
+    $('g-tip').innerHTML = '<div class="tip"><div class="tip-text">' + q.explain + '</div></div>';
+
+  $('g-next').textContent = (GQ.i + 1 < GQ.qs.length) ? '다음 문제 →' : '결과 보기 →';
+  $('g-next').classList.remove('hidden');
+}
+
+function gNext() {
+  GQ.i++;
+  if (GQ.i < GQ.qs.length) { gRender(); return; }
+
+  $('g-quiz').classList.add('hidden');
+  $('g-result').classList.remove('hidden');
+  $('g-score').textContent = GQ.score + ' / ' + GQ.qs.length;
+
+  const r = GQ.score / GQ.qs.length;
+  $('g-comment').innerHTML = '<small>' +
+    (r === 1    ? '🎉 완벽해요! 이 카드들은 다음 상자로 올라갔습니다' :
+     r >= 0.8   ? '👍 거의 다 왔어요' :
+     r >= 0.5   ? '💪 조금만 더!' :
+                  '🔥 문형 훑어보기로 한 번 정리하고 오세요') + '</small>';
+
+  renderPlan();
+  refreshDueBadge();
+}
+
+/* 문형 9개를 한눈에 훑어보는 화면 */
+function showGrammarList() {
+  $('g-quiz').classList.add('hidden');
+  $('g-result').classList.add('hidden');
+  $('g-list').classList.remove('hidden');
+
+  $('g-list-body').innerHTML = GPOINTS.map(p =>
+    '<div class="g-item">' +
+      '<div class="g-form">' + p.form + '</div>' +
+      '<div class="g-mean">' + p.meaning + '</div>' +
+      '<div class="g-conn">접속: ' + p.connect + '</div>' +
+      (p.examples || []).map(e =>
+        '<div class="g-ex">' + e.jp + '<br><span>' + e.ko + '</span></div>').join('') +
+    '</div>').join('');
+}
+
+
 /* ============================ 9) 시작 ============================ */
 
 loadData();
@@ -1144,6 +1608,8 @@ document.querySelectorAll('#scope-pick button').forEach(b =>
   b.onclick = function () { setScope(b.dataset.scope); });
 document.querySelectorAll('#mode-pick button').forEach(b =>
   b.onclick = function () { setMode(b.dataset.mode); });
+document.querySelectorAll('#g-mode-pick button').forEach(b =>
+  b.onclick = function () { setGrammarMode(b.dataset.gmode); });
 
 if ('speechSynthesis' in window) speechSynthesis.getVoices();
 
