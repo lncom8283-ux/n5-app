@@ -1253,7 +1253,9 @@ async function openGrammar() {
     $('g-error').classList.add('hidden');
 
     for (const name of GRAMMAR_FILES) {
-      const res = await fetch(name);
+      // 뒤에 ?t=시각 을 붙이면 브라우저가 "새 주소"로 보고 캐시를 건너뜁니다.
+      // 교재 파일을 고쳐서 올렸을 때 폰에 옛날 내용이 남지 않게 하려는 것입니다.
+      const res = await fetch(name + '?t=' + Date.now());
       if (!res.ok) throw new Error(name + ' — ' + res.status);
       GUNITS.push(await res.json());
     }
