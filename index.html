@@ -1,0 +1,714 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#2f6fed">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="N5단어">
+<title>내 N5 단어장</title>
+<style>
+* { box-sizing:border-box; }
+body { margin:0; font-family:system-ui,-apple-system,"Malgun Gothic",sans-serif; background:#f4f5f7; color:#1f2328; -webkit-text-size-adjust:100%; }
+.wrap { max-width:560px; margin:0 auto; padding:12px 14px 48px; }
+h1 { font-size:20px; margin:8px 0 12px; }
+h2 { font-size:16px; margin:0 0 10px; }
+nav { display:flex; gap:5px; margin-bottom:14px; }
+nav button { flex:1; padding:10px 2px; font-size:13px; border:1px solid #d5d8dd; background:#fff; border-radius:8px; cursor:pointer; }
+nav button.on { background:#2f6fed; color:#fff; border-color:#2f6fed; }
+.card { background:#fff; border:1px solid #e3e5e9; border-radius:12px; padding:16px; margin-bottom:12px; }
+button { font-family:inherit; }
+.btn { padding:11px 14px; font-size:15px; border-radius:8px; border:1px solid #d5d8dd; background:#fff; cursor:pointer; }
+.btn:hover { background:#f0f2f5; }
+.btn.primary { background:#2f6fed; color:#fff; border-color:#2f6fed; }
+.btn.primary:hover { background:#2560d8; }
+.btn.wide { width:100%; }
+.btn.big { padding:16px; font-size:17px; }
+.row { display:flex; gap:8px; }
+.row > * { flex:1; }
+.pick { display:flex; flex-wrap:wrap; gap:6px; margin-bottom:12px; }
+.pick button { padding:7px 11px; font-size:13px; border-radius:999px; border:1px solid #d5d8dd; background:#fff; cursor:pointer; }
+.pick button.on { background:#1f2328; color:#fff; border-color:#1f2328; }
+label.field { display:block; font-size:13px; color:#6b7280; margin:10px 0 4px; }
+input[type=text] { width:100%; padding:11px 12px; font-size:16px; border:1px solid #d5d8dd; border-radius:8px; }
+.msg { text-align:center; font-size:14px; min-height:20px; margin-top:10px; font-weight:600; }
+.center { text-align:center; }
+.muted { color:#6b7280; font-size:13px; line-height:1.6; }
+.hidden { display:none; }
+.bar { height:8px; background:#e6e8ec; border-radius:99px; overflow:hidden; margin:8px 0; }
+.bar > div { height:100%; background:#2f6fed; width:0%; transition:width .25s; }
+.flash { text-align:center; padding:26px 16px; cursor:pointer; user-select:none; }
+.jp { font-size:52px; line-height:1.15; }
+.read { font-size:22px; color:#6b7280; margin-top:8px; }
+.ko { font-size:28px; color:#2f6fed; font-weight:700; margin-top:8px; }
+.tip { font-size:14px; color:#6b7280; margin-top:10px; }
+.hint { font-size:13px; color:#9aa0a8; margin-top:12px; }
+.q-jp { font-size:44px; text-align:center; margin:6px 0 16px; }
+.choices { display:grid; gap:8px; }
+.choices button { padding:14px 10px; font-size:17px; border:1px solid #d5d8dd; background:#fff; border-radius:10px; cursor:pointer; text-align:left; }
+.choices button:hover:not(:disabled){ background:#f0f2f5; }
+.choices button.correct { background:#d9f2e2; border-color:#34a05f; color:#14612f; }
+.choices button.wrong { background:#fbdede; border-color:#d9534f; color:#8a1f1c; }
+.choices button:disabled { cursor:default; }
+.item { display:flex; align-items:center; gap:8px; padding:9px 0; border-bottom:1px solid #eef0f3; }
+.item .w { flex:1; }
+.item .w b { font-size:17px; }
+.item .w small { color:#6b7280; display:block; }
+.item button { border:none; background:none; cursor:pointer; font-size:15px; padding:5px; }
+table { width:100%; border-collapse:collapse; font-size:14px; }
+td { padding:7px 4px; border-bottom:1px solid #eef0f3; }
+td:last-child { text-align:right; font-weight:700; }
+.big { font-size:38px; font-weight:700; margin:8px 0; }
+.tag { font-size:12px; background:#eef1f6; color:#4b5563; padding:2px 8px; border-radius:999px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+<h1>📒 내 N5 단어장</h1>
+<nav>
+  <button id="nav-today" class="on" onclick="showView('today')">오늘</button>
+  <button id="nav-words"           onclick="showView('words')">단어</button>
+  <button id="nav-grammar"         onclick="showView('grammar')">문법</button>
+  <button id="nav-stats"           onclick="showView('stats')">통계</button>
+  <button id="nav-settings"        onclick="showView('settings')">설정</button>
+</nav>
+
+<!-- ============ 오늘 ============ -->
+<div id="view-today" class="view">
+  <div class="card">
+    <h2>🈁 히라가나 단어 <span id="tk-count" style="float:right;color:#2f6fed">0 / 20</span></h2>
+    <div class="bar"><div id="tk-bar"></div></div>
+    <button class="btn primary wide big" onclick="startTrack('kana')">히라가나 20개 시작 ▶</button>
+  </div>
+  <div class="card">
+    <h2>🈶 한자 <span id="tj-count" style="float:right;color:#2f6fed">0 / 5</span></h2>
+    <div class="bar"><div id="tj-bar"></div></div>
+    <button class="btn primary wide big" onclick="startTrack('kanji')">한자 5개 시작 ▶</button>
+  </div>
+  <div class="card">
+    <p class="muted">복습할 단어가 먼저, 그다음 새 단어가 나와요. 틀린 건 아래에서 다시 볼 수 있어요.</p>
+    <button class="btn wide" onclick="startWrong()">✏️ 틀린 단어만 복습 (<span id="t-wrong">0</span>)</button>
+  </div>
+  <div id="t-session" class="hidden">
+    <div class="card flash" onclick="tFlip()">
+      <div class="jp" id="t-jp">—</div>
+      <div id="t-back" class="hidden">
+        <div class="read" id="t-read"></div>
+        <div class="ko" id="t-ko"></div>
+        <div class="tip" id="t-tip"></div>
+      </div>
+      <div class="hint" id="t-hint">카드를 눌러 뜻·발음 보기</div>
+    </div>
+    <div class="row" id="t-grade" style="display:none">
+      <button class="btn" onclick="tGrade(false)">🙁 몰랐어</button>
+      <button class="btn" onclick="speak(cur()&&cur().kana)">🔊 듣기</button>
+      <button class="btn primary" onclick="tGrade(true)">🙂 알았어</button>
+    </div>
+    <div class="center" style="margin-top:8px"><small class="muted" id="t-prog"></small></div>
+  </div>
+  <div id="t-done" class="card center hidden">
+    <h2>🎉 오늘 세션 끝!</h2>
+    <div id="t-summary" class="muted"></div>
+    <button class="btn primary wide" style="margin-top:10px" onclick="startToday()">더 하기</button>
+  </div>
+</div>
+
+<!-- ============ 단어 ============ -->
+<div id="view-words" class="view hidden">
+  <div class="card">
+    <div class="pick" id="w-mode">
+      <button data-m="card" class="on">카드</button>
+      <button data-m="quiz">4지선다</button>
+      <button data-m="list">목록</button>
+      <button data-m="add">＋추가</button>
+    </div>
+    <div class="pick" id="w-theme"></div>
+  </div>
+  <!-- 카드 -->
+  <div id="wm-card">
+    <div class="card flash" onclick="wFlip()">
+      <div class="jp" id="w-jp">—</div>
+      <div id="w-back" class="hidden">
+        <div class="read" id="w-read"></div>
+        <div class="ko" id="w-ko"></div>
+        <div class="tip" id="w-tip"></div>
+      </div>
+      <div class="hint" id="w-hint">카드를 눌러 뜻 보기</div>
+    </div>
+    <div class="row">
+      <button class="btn" onclick="wMove(-1)">← 이전</button>
+      <button class="btn" onclick="speak(wDeck[WIDX]&&wDeck[WIDX].kana)">🔊 듣기</button>
+      <button class="btn primary" onclick="wMove(1)">다음 →</button>
+    </div>
+    <div class="center" style="margin-top:8px"><small class="muted" id="w-cnt"></small></div>
+  </div>
+  <!-- 퀴즈 -->
+  <div id="wm-quiz" class="hidden">
+    <div class="pick" id="wq-type">
+      <button data-t="mean" class="on">뜻 맞히기</button>
+      <button data-t="read">한자 읽기</button>
+    </div>
+    <div class="card">
+      <div class="bar"><div id="wq-bar"></div></div>
+      <div class="center"><small class="muted" id="wq-prog"></small></div>
+      <div class="q-jp" id="wq-jp" onclick="if(WQUIZ&&WQUIZ.qs[WQUIZ.i])speak(WQUIZ.qs[WQUIZ.i].kana)">—</div>
+      <div class="choices" id="wq-choices"></div>
+      <div class="msg" id="wq-msg"></div>
+    </div>
+    <button class="btn wide" onclick="startWQuiz()">↺ 다시</button>
+  </div>
+  <!-- 목록 -->
+  <div id="wm-list" class="hidden">
+    <div class="card"><h2>단어 (<span id="wl-cnt">0</span>)</h2><div id="wl-body"></div></div>
+  </div>
+  <!-- 추가 -->
+  <div id="wm-add" class="hidden">
+    <div class="card">
+      <h2>내 단어 넣기</h2>
+      <p class="muted">교재에 없는 단어를 직접 넣을 수 있어요. 한자는 몰라도 히라가나로 적으면 됩니다.</p>
+      <label class="field">일본어 (한자 또는 히라가나) *</label>
+      <input type="text" id="a-jp" placeholder="예: 水 또는 みず" autocomplete="off">
+      <label class="field">히라가나 읽기 *</label>
+      <input type="text" id="a-kana" placeholder="예: みず" autocomplete="off">
+      <label class="field">뜻 *</label>
+      <input type="text" id="a-ko" placeholder="예: 물" autocomplete="off">
+      <label class="field">한글 발음 (선택)</label>
+      <input type="text" id="a-roma" placeholder="예: 미즈" autocomplete="off">
+      <button class="btn primary wide" style="margin-top:14px" onclick="addWord()">＋ 추가하기</button>
+      <div class="msg" id="a-msg"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ 문법 ============ -->
+<div id="view-grammar" class="view hidden">
+  <div class="card">
+    <div class="pick" id="g-mode">
+      <button data-m="group" class="on">동사 그룹</button>
+      <button data-m="conj">ます·ない 활용</button>
+      <button data-m="point">문형</button>
+      <button data-m="adj">형용사</button>
+      <button data-m="sent">문장</button>
+    </div>
+    <p class="muted" id="g-help"></p>
+  </div>
+  <!-- 그룹 퀴즈 -->
+  <div id="gm-group" class="hidden">
+    <div class="card center">
+      <div class="jp" id="gg-jp" onclick="speak(GG&&GG.kana)">—</div>
+      <div class="muted" id="gg-ko"></div>
+      <div class="choices" style="margin-top:14px">
+        <div class="row">
+          <button class="btn" onclick="ggAns('1')">1그룹</button>
+          <button class="btn" onclick="ggAns('2')">2그룹</button>
+          <button class="btn" onclick="ggAns('3')">3그룹</button>
+        </div>
+      </div>
+      <div class="msg" id="gg-msg"></div>
+      <div class="row" style="margin-top:8px">
+        <button class="btn" onclick="speak(GG&&GG.kana)">🔊 듣기</button>
+        <button class="btn primary" onclick="ggNext()">다음 →</button>
+      </div>
+    </div>
+  </div>
+  <!-- 활용 카드 -->
+  <div id="gm-conj" class="hidden">
+    <div class="pick" id="gc-kind">
+      <button data-k="masu" class="on">ます형 (~합니다)</button>
+      <button data-k="nai">ない형 (~않는다)</button>
+    </div>
+    <div class="card flash" onclick="gcFlip()">
+      <div class="jp" id="gc-front" style="font-size:34px">—</div>
+      <div id="gc-back" class="hidden">
+        <div class="ko" id="gc-form"></div>
+        <div class="tip" id="gc-ko"></div>
+      </div>
+      <div class="hint" id="gc-hint">카드를 눌러 정답 보기</div>
+    </div>
+    <div class="row">
+      <button class="btn" onclick="gcMove(-1)">← 이전</button>
+      <button class="btn" onclick="speak(GRAMMAR[GCKIND][GCIDX]&&GRAMMAR[GCKIND][GCIDX][1])">🔊 듣기</button>
+      <button class="btn primary" onclick="gcMove(1)">다음 →</button>
+    </div>
+    <div class="center" style="margin-top:8px"><small class="muted" id="gc-cnt"></small></div>
+  </div>
+  <!-- 문형 카드 -->
+  <div id="gm-point" class="hidden">
+    <div class="card flash" onclick="gpFlip()">
+      <div class="jp" id="gp-form" style="font-size:32px">—</div>
+      <div id="gp-back" class="hidden">
+        <div class="ko" id="gp-mean"></div>
+        <div class="tip" id="gp-ex"></div>
+      </div>
+      <div class="hint" id="gp-hint">카드를 눌러 뜻·예문 보기</div>
+    </div>
+    <div class="row">
+      <button class="btn" onclick="gpMove(-1)">← 이전</button>
+      <button class="btn" onclick="speak(GRAMMAR.points[GPIDX]&&GRAMMAR.points[GPIDX][2])">🔊 예문</button>
+      <button class="btn primary" onclick="gpMove(1)">다음 →</button>
+    </div>
+    <div class="center" style="margin-top:8px"><small class="muted" id="gp-cnt"></small></div>
+  </div>
+  <!-- 형용사 활용 퀴즈 -->
+  <div id="gm-adj" class="hidden">
+    <div class="pick" id="ga-kind">
+      <button data-k="i" class="on">い형용사</button>
+      <button data-k="na">な형용사</button>
+      <button data-k="all">전체</button>
+    </div>
+    <div class="card center">
+      <div class="jp" id="ga-jp" style="font-size:40px" onclick="speak(GA&&GA.kana)">—</div>
+      <div class="muted" id="ga-ko"></div>
+      <div id="ga-target" style="margin-top:10px;font-weight:700"></div>
+      <div class="choices" id="ga-choices" style="margin-top:12px"></div>
+      <div class="msg" id="ga-msg"></div>
+      <button class="btn wide" style="margin-top:8px" onclick="gaNext()">다음 →</button>
+    </div>
+  </div>
+  <!-- 문장 퀴즈 (빈칸 채우기) -->
+  <div id="gm-sent" class="hidden">
+    <div class="card">
+      <div class="center"><small class="muted" id="gs-prog"></small></div>
+      <div id="gs-q" style="font-size:20px; line-height:1.7; margin:8px 0 14px"></div>
+      <div class="choices" id="gs-choices"></div>
+      <div class="msg" id="gs-msg"></div>
+      <div id="gs-exp" class="muted" style="margin-top:4px"></div>
+      <div class="row" style="margin-top:10px">
+        <button class="btn" onclick="speak(SENT&&SENT.say)">🔊 듣기</button>
+        <button class="btn primary" onclick="gsNext()">다음 →</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ 통계 ============ -->
+<div id="view-stats" class="view hidden">
+  <div class="card">
+    <h2>학습 기록</h2>
+    <table>
+      <tr><td>히라가나 단어</td><td id="s-ktot">0</td></tr>
+      <tr><td>한자 단어</td><td id="s-jtot">0</td></tr>
+      <tr><td>오늘 (히라가나 / 한자)</td><td id="s-today">0 / 0</td></tr>
+      <tr><td>전체 정답률</td><td id="s-rate">-</td></tr>
+      <tr><td>복습 대기 중</td><td id="s-due">0</td></tr>
+      <tr><td>틀린 단어 (복습 필요)</td><td id="s-wrong">0</td></tr>
+    </table>
+  </div>
+  <div class="card">
+    <h2>시험까지</h2>
+    <div class="big center" id="s-dday">D-000</div>
+    <small class="muted center" id="s-dnote"></small>
+  </div>
+</div>
+
+<!-- ============ 설정 ============ -->
+<div id="view-settings" class="view hidden">
+  <div class="card">
+    <h2>💾 백업 (중요!)</h2>
+    <p class="muted">학습 기록은 이 브라우저에만 저장돼요. 가끔 파일로 내보내 두세요.</p>
+    <div class="row">
+      <button class="btn" onclick="exportData()">내보내기</button>
+      <button class="btn" onclick="document.getElementById('imp').click()">불러오기</button>
+    </div>
+    <input type="file" id="imp" accept=".json" class="hidden" onchange="importData(event)">
+    <div class="msg" id="backup-msg"></div>
+  </div>
+  <div class="card">
+    <h2>🔊 음성 확인</h2>
+    <p class="muted">일본어 음성이 없으면 발음이 어색할 수 있어요. (윈도우: 설정→언어→일본어 음성 설치)</p>
+    <button class="btn wide" onclick="speak('みず。にほんご。')">테스트 음성 재생</button>
+    <div class="msg" id="voice-msg"></div>
+  </div>
+  <div class="card">
+    <h2>📥 기본 단어 다시 불러오기</h2>
+    <p class="muted">교재 258단어(정리본 239개)를 다시 채워요. 이미 있으면 중복은 건너뜁니다.</p>
+    <button class="btn wide" onclick="reseed()">기본 단어 채우기</button>
+    <div class="msg" id="seed-msg"></div>
+  </div>
+  <div class="card">
+    <h2>⚠️ 초기화</h2>
+    <p class="muted">모든 단어와 기록이 지워집니다. 되돌릴 수 없어요.</p>
+    <button class="btn wide" onclick="resetData()">전체 삭제</button>
+  </div>
+</div>
+</div>
+
+<script>
+const SEED=[{"jp": "あし", "kana": "あし", "roma": "", "ko": "발, 다리", "tip": "", "theme": "문맥규정", "track": "kana"}, {"jp": "あした", "kana": "あした", "roma": "", "ko": "내일", "tip": "", "theme": "문맥규정", "track": "kana"}, {"jp": "あそぶ", "kana": "あそぶ", "roma": "", "ko": "놀다", "tip": "", "theme": "문맥규정", "track": "kana"}, {"jp": "あたたかい", "kana": "あたたかい", "roma": "", "ko": "따뜻하다", "tip": "", "theme": "문맥규정", "track": "kana"}, {"jp": "あたらしい", "kana": "あたらしい", "roma": "", "ko": "새롭다", "tip": "", "theme": "문맥규정", "track": "kana"}, {"jp": "あに", "kana": "あに", "roma": "", "ko": "오빠, 형", "tip": "", "theme": "문맥규정", "track": "kana"}, {"jp": "アパート", "kana": "アパート", "roma": "", "ko": "아파트", "tip": "", "theme": "문맥규정", "track": "kana"}, {"jp": "いちだい", "kana": "いちだい", "roma": "", "ko": "한 대(자전거)", "tip": "", "theme": "문맥규정", "track": "kana"}, {"jp": "いちど", "kana": "いちど", "roma": "", "ko": "한 번", "tip": "", "theme": "문맥규정", "track": "kana"}, {"jp": "いつつ", "kana": "いつつ", "roma": "", "ko": "다섯, 다섯 개", "tip": "", "theme": "문맥규정", "track": "kana"}, {"jp": "いぬ", "kana": "いぬ", "roma": "", "ko": "개", "tip": "", "theme": "문맥규정", "track": "kana"}, {"jp": "いれる", "kana": "いれる", "roma": "", "ko": "넣다", "tip": "", "theme": "문맥규정", "track": "kana"}, {"jp": "いろいろ", "kana": "いろいろ", "roma": "", "ko": "여러 가지임", "tip": "", "theme": "문맥규정", "track": "kana"}, {"jp": "うすい", "kana": "うすい", "roma": "", "ko": "얇다", "tip": "", "theme": "문맥규정", "track": "kana"}, {"jp": "うまれる", "kana": "うまれる", "roma": "", "ko": "태어나다", "tip": "", "theme": "문맥규정", "track": "kana"}, {"jp": "えらぶ", "kana": "えらぶ", "roma": "", "ko": "고르다, 선택하다", "tip": "", "theme": "문맥규정", "track": "kana"}, {"jp": "あぶない", "kana": "あぶない", "roma": "", "ko": "위험하다", "tip": "", "theme": "문맥규정", "track": "kana"}, {"jp": "あまい", "kana": "あまい", "roma": "", "ko": "달다", "tip": "", "theme": "문맥규정", "track": "kana"}, {"jp": "あらう", "kana": "あらう", "roma": "", "ko": "씻다", "tip": "", "theme": "문맥규정", "track": "kana"}, {"jp": "あるく", "kana": "あるく", "roma": "", "ko": "걷다", "tip": "", "theme": "문맥규정", "track": "kana"}, {"jp": "いくら", "kana": "いくら", "roma": "", "ko": "얼마(값)", "tip": "", "theme": "문맥규정", "track": "kana"}, {"jp": "いそがしい", "kana": "いそがしい", "roma": "", "ko": "바쁘다", "tip": "", "theme": "문맥규정", "track": "kana"}, {"jp": "いたい", "kana": "いたい", "roma": "", "ko": "아프다", "tip": "", "theme": "문맥규정", "track": "kana"}, {"jp": "エレベーター", "kana": "エレベーター", "roma": "", "ko": "엘리베이터", "tip": "", "theme": "문맥규정", "track": "kana"}, {"jp": "おいしい", "kana": "おいしい", "roma": "", "ko": "맛있다", "tip": "", "theme": "문맥규정", "track": "kana"}, {"jp": "おおぜい", "kana": "おおぜい", "roma": "", "ko": "많이", "tip": "", "theme": "문맥규정", "track": "kana"}, {"jp": "おきる", "kana": "おきる", "roma": "", "ko": "일어나다", "tip": "", "theme": "문맥규정", "track": "kana"}, {"jp": "おく", "kana": "おく", "roma": "", "ko": "놓다, 두다", "tip": "", "theme": "문맥규정", "track": "kana"}, {"jp": "おじさん", "kana": "おじさん", "roma": "", "ko": "아저씨, 삼촌", "tip": "", "theme": "문맥규정", "track": "kana"}, {"jp": "おす", "kana": "おす", "roma": "", "ko": "누르다, 밀다", "tip": "", "theme": "문맥규정", "track": "kana"}, {"jp": "かど", "kana": "かど", "roma": "", "ko": "모퉁이", "tip": "", "theme": "문맥규정", "track": "kana"}, {"jp": "かぶる", "kana": "かぶる", "roma": "", "ko": "(모자를) 쓰다", "tip": "", "theme": "문맥규정", "track": "kana"}, {"jp": "からい", "kana": "からい", "roma": "", "ko": "맵다", "tip": "", "theme": "문맥규정", "track": "kana"}, {"jp": "ギター", "kana": "ギター", "roma": "", "ko": "기타(악기)", "tip": "", "theme": "문맥규정", "track": "kana"}, {"jp": "きたない", "kana": "きたない", "roma": "", "ko": "더럽다, 지저분하다", "tip": "", "theme": "문맥규정", "track": "kana"}, {"jp": "きって", "kana": "きって", "roma": "", "ko": "우표", "tip": "", "theme": "문맥규정", "track": "kana"}, {"jp": "きっぷ", "kana": "きっぷ", "roma": "", "ko": "표, 티켓", "tip": "", "theme": "문맥규정", "track": "kana"}, {"jp": "きる", "kana": "きる", "roma": "", "ko": "자르다", "tip": "", "theme": "문맥규정", "track": "kana"}, {"jp": "くらい", "kana": "くらい", "roma": "", "ko": "어둡다", "tip": "", "theme": "문맥규정", "track": "kana"}, {"jp": "おととし", "kana": "おととし", "roma": "", "ko": "재작년", "tip": "", "theme": "문맥규정", "track": "kana"}, {"jp": "おとな", "kana": "おとな", "roma": "", "ko": "어른", "tip": "", "theme": "문맥규정", "track": "kana"}, {"jp": "おぼえる", "kana": "おぼえる", "roma": "", "ko": "기억하다, 암기하다", "tip": "", "theme": "문맥규정", "track": "kana"}, {"jp": "おもい", "kana": "おもい", "roma": "", "ko": "무겁다", "tip": "", "theme": "문맥규정", "track": "kana"}, {"jp": "おもしろい", "kana": "おもしろい", "roma": "", "ko": "재미있다", "tip": "", "theme": "문맥규정", "track": "kana"}, {"jp": "およぐ", "kana": "およぐ", "roma": "", "ko": "헤엄치다", "tip": "", "theme": "문맥규정", "track": "kana"}, {"jp": "おりる", "kana": "おりる", "roma": "", "ko": "내리다", "tip": "", "theme": "문맥규정", "track": "kana"}, {"jp": "かう", "kana": "かう", "roma": "", "ko": "사다, 구입하다", "tip": "", "theme": "문맥규정", "track": "kana"}, {"jp": "かえす", "kana": "かえす", "roma": "", "ko": "되돌려주다", "tip": "", "theme": "문맥규정", "track": "kana"}, {"jp": "かかる", "kana": "かかる", "roma": "", "ko": "(시간·비용이) 들다, 걸리다", "tip": "", "theme": "문맥규정", "track": "kana"}, {"jp": "かける", "kana": "かける", "roma": "", "ko": "(안경을) 쓰다", "tip": "", "theme": "문맥규정", "track": "kana"}, {"jp": "かぜ", "kana": "かぜ", "roma": "", "ko": "감기", "tip": "", "theme": "문맥규정", "track": "kana"}, {"jp": "かぜをひく", "kana": "かぜをひく", "roma": "", "ko": "감기에 들다", "tip": "", "theme": "문맥규정", "track": "kana"}, {"jp": "かぞく", "kana": "かぞく", "roma": "", "ko": "가족", "tip": "", "theme": "문맥규정", "track": "kana"}, {"jp": "けす", "kana": "けす", "roma": "", "ko": "(불을) 끄다", "tip": "", "theme": "문맥규정", "track": "kana"}, {"jp": "けっこう", "kana": "けっこう", "roma": "", "ko": "충분함, 이제 됐음", "tip": "", "theme": "문맥규정", "track": "kana"}, {"jp": "けっこんする", "kana": "けっこんする", "roma": "", "ko": "결혼하다", "tip": "", "theme": "문맥규정", "track": "kana"}, {"jp": "げんき", "kana": "げんき", "roma": "", "ko": "건강함", "tip": "", "theme": "문맥규정", "track": "kana"}, {"jp": "こうえん", "kana": "こうえん", "roma": "", "ko": "공원", "tip": "", "theme": "문맥규정", "track": "kana"}, {"jp": "こうちゃ", "kana": "こうちゃ", "roma": "", "ko": "홍차", "tip": "", "theme": "문맥규정", "track": "kana"}, {"jp": "こちら", "kana": "こちら", "roma": "", "ko": "이쪽, 이 분, 이 사람", "tip": "", "theme": "문맥규정", "track": "kana"}, {"jp": "こちらこそ", "kana": "こちらこそ", "roma": "", "ko": "저야말로", "tip": "", "theme": "문맥규정", "track": "kana"}, {"jp": "さす", "kana": "さす", "roma": "", "ko": "(우산을) 쓰다, 받다", "tip": "", "theme": "문맥규정", "track": "kana"}, {"jp": "さんかい", "kana": "さんかい", "roma": "", "ko": "3회, 세 번", "tip": "", "theme": "문맥규정", "track": "kana"}, {"jp": "さんさつ", "kana": "さんさつ", "roma": "", "ko": "세 권(책)", "tip": "", "theme": "문맥규정", "track": "kana"}, {"jp": "じしょ", "kana": "じしょ", "roma": "", "ko": "사전", "tip": "", "theme": "문맥규정", "track": "kana"}, {"jp": "しずかに", "kana": "しずかに", "roma": "", "ko": "조용히", "tip": "", "theme": "문맥규정", "track": "kana"}, {"jp": "しつもんする", "kana": "しつもんする", "roma": "", "ko": "질문하다", "tip": "", "theme": "문맥규정", "track": "kana"}, {"jp": "しめる", "kana": "しめる", "roma": "", "ko": "(문을) 닫다", "tip": "", "theme": "문맥규정", "track": "kana"}, {"jp": "しゃしん", "kana": "しゃしん", "roma": "", "ko": "사진", "tip": "", "theme": "문맥규정", "track": "kana"}, {"jp": "じょうず", "kana": "じょうず", "roma": "", "ko": "능숙함, 잘함", "tip": "", "theme": "문맥규정", "track": "kana"}, {"jp": "じょうぶ", "kana": "じょうぶ", "roma": "", "ko": "튼튼함", "tip": "", "theme": "문맥규정", "track": "kana"}, {"jp": "すう", "kana": "すう", "roma": "", "ko": "(담배를) 피우다", "tip": "", "theme": "문맥규정", "track": "kana"}, {"jp": "スカート", "kana": "スカート", "roma": "", "ko": "스커트, 치마", "tip": "", "theme": "문맥규정", "track": "kana"}, {"jp": "すき", "kana": "すき", "roma": "", "ko": "좋아함", "tip": "", "theme": "문맥규정", "track": "kana"}, {"jp": "スキー", "kana": "スキー", "roma": "", "ko": "스키", "tip": "", "theme": "문맥규정", "track": "kana"}, {"jp": "すぐに", "kana": "すぐに", "roma": "", "ko": "곧, 바로", "tip": "", "theme": "문맥규정", "track": "kana"}, {"jp": "ストーブ", "kana": "ストーブ", "roma": "", "ko": "스토브, 난로", "tip": "", "theme": "문맥규정", "track": "kana"}, {"jp": "セーター", "kana": "セーター", "roma": "", "ko": "스웨터", "tip": "", "theme": "문맥규정", "track": "kana"}, {"jp": "そば", "kana": "そば", "roma": "", "ko": "옆, 곁", "tip": "", "theme": "문맥규정", "track": "kana"}, {"jp": "それでは", "kana": "それでは", "roma": "", "ko": "그럼", "tip": "", "theme": "문맥규정", "track": "kana"}, {"jp": "だいじょうぶ", "kana": "だいじょうぶ", "roma": "", "ko": "괜찮음", "tip": "", "theme": "문맥규정", "track": "kana"}, {"jp": "たいせつ", "kana": "たいせつ", "roma": "", "ko": "중요함, 소중함", "tip": "", "theme": "문맥규정", "track": "kana"}, {"jp": "たいてい", "kana": "たいてい", "roma": "", "ko": "대체로", "tip": "", "theme": "문맥규정", "track": "kana"}, {"jp": "たいへん", "kana": "たいへん", "roma": "", "ko": "힘듦, 큰일임", "tip": "", "theme": "문맥규정", "track": "kana"}, {"jp": "い", "kana": "い", "roma": "", "ko": "비싸다, 높다, (키가) 크다", "tip": "", "theme": "문맥규정", "track": "kana"}, {"jp": "たくさん", "kana": "たくさん", "roma": "", "ko": "많이", "tip": "", "theme": "문맥규정", "track": "kana"}, {"jp": "たのしい", "kana": "たのしい", "roma": "", "ko": "즐겁다", "tip": "", "theme": "문맥규정", "track": "kana"}, {"jp": "たぶん", "kana": "たぶん", "roma": "", "ko": "아마", "tip": "", "theme": "문맥규정", "track": "kana"}, {"jp": "だんだん", "kana": "だんだん", "roma": "", "ko": "점점, 점차", "tip": "", "theme": "문맥규정", "track": "kana"}, {"jp": "ちいさい", "kana": "ちいさい", "roma": "", "ko": "작다", "tip": "", "theme": "문맥규정", "track": "kana"}, {"jp": "ちかい", "kana": "ちかい", "roma": "", "ko": "가깝다", "tip": "", "theme": "문맥규정", "track": "kana"}, {"jp": "ちがいます", "kana": "ちがいます", "roma": "", "ko": "\u0007아닙니다, 틀립니다", "tip": "", "theme": "문맥규정", "track": "kana"}, {"jp": "ちず", "kana": "ちず", "roma": "", "ko": "지도", "tip": "", "theme": "문맥규정", "track": "kana"}, {"jp": "ちょうど", "kana": "ちょうど", "roma": "", "ko": "정각, 정확히", "tip": "", "theme": "문맥규정", "track": "kana"}, {"jp": "つかれる", "kana": "つかれる", "roma": "", "ko": "피곤하다, 지치다", "tip": "", "theme": "문맥규정", "track": "kana"}, {"jp": "つく", "kana": "つく", "roma": "", "ko": "(전기가) 켜지다", "tip": "", "theme": "문맥규정", "track": "kana"}, {"jp": "つめたい", "kana": "つめたい", "roma": "", "ko": "차갑다", "tip": "", "theme": "문맥규정", "track": "kana"}, {"jp": "つよい", "kana": "つよい", "roma": "", "ko": "강하다, 세다", "tip": "", "theme": "문맥규정", "track": "kana"}, {"jp": "てがみ", "kana": "てがみ", "roma": "", "ko": "편지", "tip": "", "theme": "문맥규정", "track": "kana"}, {"jp": "でも", "kana": "でも", "roma": "", "ko": "하지만, 그렇지만", "tip": "", "theme": "문맥규정", "track": "kana"}, {"jp": "でる", "kana": "でる", "roma": "", "ko": "나가(오)다", "tip": "", "theme": "문맥규정", "track": "kana"}, {"jp": "てんき", "kana": "てんき", "roma": "", "ko": "날씨", "tip": "", "theme": "문맥규정", "track": "kana"}, {"jp": "でんわ", "kana": "でんわ", "roma": "", "ko": "전화", "tip": "", "theme": "문맥규정", "track": "kana"}, {"jp": "とおい", "kana": "とおい", "roma": "", "ko": "멀다", "tip": "", "theme": "문맥규정", "track": "kana"}, {"jp": "ときどき", "kana": "ときどき", "roma": "", "ko": "때때로", "tip": "", "theme": "문맥규정", "track": "kana"}, {"jp": "どちら", "kana": "どちら", "roma": "", "ko": "어느 쪽, 어느 분", "tip": "", "theme": "문맥규정", "track": "kana"}, {"jp": "とぶ", "kana": "とぶ", "roma": "", "ko": "날다", "tip": "", "theme": "문맥규정", "track": "kana"}, {"jp": "とまる", "kana": "とまる", "roma": "", "ko": "멈추다", "tip": "", "theme": "문맥규정", "track": "kana"}, {"jp": "とる", "kana": "とる", "roma": "", "ko": "집다, 잡다", "tip": "", "theme": "문맥규정", "track": "kana"}, {"jp": "ならう", "kana": "ならう", "roma": "", "ko": "배우다, 익히다", "tip": "", "theme": "문맥규정", "track": "kana"}, {"jp": "ならべる", "kana": "ならべる", "roma": "", "ko": "진열하다", "tip": "", "theme": "문맥규정", "track": "kana"}, {"jp": "なんこ", "kana": "なんこ", "roma": "", "ko": "몇 개", "tip": "", "theme": "문맥규정", "track": "kana"}, {"jp": "にかい", "kana": "にかい", "roma": "", "ko": "2층", "tip": "", "theme": "문맥규정", "track": "kana"}, {"jp": "にさつ", "kana": "にさつ", "roma": "", "ko": "두 권(잡지)", "tip": "", "theme": "문맥규정", "track": "kana"}, {"jp": "にだい", "kana": "にだい", "roma": "", "ko": "두 대(자전거)", "tip": "", "theme": "문맥규정", "track": "kana"}, {"jp": "にひき", "kana": "にひき", "roma": "", "ko": "두 마리(고양이)", "tip": "", "theme": "문맥규정", "track": "kana"}, {"jp": "のぼる", "kana": "のぼる", "roma": "", "ko": "(산을) 오르다", "tip": "", "theme": "문맥규정", "track": "kana"}, {"jp": "のみもの", "kana": "のみもの", "roma": "", "ko": "마실 것", "tip": "", "theme": "문맥규정", "track": "kana"}, {"jp": "のむ", "kana": "のむ", "roma": "", "ko": "마시다, 삼키다", "tip": "", "theme": "문맥규정", "track": "kana"}, {"jp": "のる", "kana": "のる", "roma": "", "ko": "(차, 비행기를) 타다", "tip": "", "theme": "문맥규정", "track": "kana"}, {"jp": "パーティー", "kana": "パーティー", "roma": "", "ko": "파티", "tip": "", "theme": "문맥규정", "track": "kana"}, {"jp": "はく", "kana": "はく", "roma": "", "ko": "\u0007(바지를) 입다,", "tip": "", "theme": "문맥규정", "track": "kana"}, {"jp": "はし", "kana": "はし", "roma": "", "ko": "다리, 교량", "tip": "", "theme": "문맥규정", "track": "kana"}, {"jp": "はじめて", "kana": "はじめて", "roma": "", "ko": "처음으로", "tip": "", "theme": "문맥규정", "track": "kana"}, {"jp": "はたち", "kana": "はたち", "roma": "", "ko": "20세, 스무 살", "tip": "", "theme": "문맥규정", "track": "kana"}, {"jp": "はちじゅうえん", "kana": "はちじゅうえん", "roma": "", "ko": "80엔", "tip": "", "theme": "문맥규정", "track": "kana"}, {"jp": "はる", "kana": "はる", "roma": "", "ko": "붙이다", "tip": "", "theme": "문맥규정", "track": "kana"}, {"jp": "ひま", "kana": "ひま", "roma": "", "ko": "틈, 짬, 여가", "tip": "", "theme": "문맥규정", "track": "kana"}, {"jp": "ふく", "kana": "ふく", "roma": "", "ko": "(바람이) 불다", "tip": "", "theme": "문맥규정", "track": "kana"}, {"jp": "ふつか", "kana": "ふつか", "roma": "", "ko": "2일, 초이틀", "tip": "", "theme": "문맥규정", "track": "kana"}, {"jp": "べんり", "kana": "べんり", "roma": "", "ko": "편리함", "tip": "", "theme": "문맥규정", "track": "kana"}, {"jp": "ぼうし", "kana": "ぼうし", "roma": "", "ko": "모자", "tip": "", "theme": "문맥규정", "track": "kana"}, {"jp": "ほしい", "kana": "ほしい", "roma": "", "ko": "가지고 싶다", "tip": "", "theme": "문맥규정", "track": "kana"}, {"jp": "ほそい", "kana": "ほそい", "roma": "", "ko": "가늘다", "tip": "", "theme": "문맥규정", "track": "kana"}, {"jp": "ほんや", "kana": "ほんや", "roma": "", "ko": "책방, 서점", "tip": "", "theme": "문맥규정", "track": "kana"}, {"jp": "まいしゅう", "kana": "まいしゅう", "roma": "", "ko": "매주", "tip": "", "theme": "문맥규정", "track": "kana"}, {"jp": "まがる", "kana": "まがる", "roma": "", "ko": "돌다, (방향을) 틀다", "tip": "", "theme": "문맥규정", "track": "kana"}, {"jp": "また", "kana": "また", "roma": "", "ko": "또", "tip": "", "theme": "문맥규정", "track": "kana"}, {"jp": "まっすぐ", "kana": "まっすぐ", "roma": "", "ko": "똑바로, 곧장", "tip": "", "theme": "문맥규정", "track": "kana"}, {"jp": "まど", "kana": "まど", "roma": "", "ko": "창문", "tip": "", "theme": "문맥규정", "track": "kana"}, {"jp": "みがく", "kana": "みがく", "roma": "", "ko": "(이를) 닦다", "tip": "", "theme": "문맥규정", "track": "kana"}, {"jp": "みち", "kana": "みち", "roma": "", "ko": "길", "tip": "", "theme": "문맥규정", "track": "kana"}, {"jp": "もっと", "kana": "もっと", "roma": "", "ko": "좀 더, 더", "tip": "", "theme": "문맥규정", "track": "kana"}, {"jp": "やさい", "kana": "やさい", "roma": "", "ko": "야채", "tip": "", "theme": "문맥규정", "track": "kana"}, {"jp": "ゆうべ", "kana": "ゆうべ", "roma": "", "ko": "어젯밤", "tip": "", "theme": "문맥규정", "track": "kana"}, {"jp": "ゆっくり", "kana": "ゆっくり", "roma": "", "ko": "천천히", "tip": "", "theme": "문맥규정", "track": "kana"}, {"jp": "ようか", "kana": "ようか", "roma": "", "ko": "8일, 여드레", "tip": "", "theme": "문맥규정", "track": "kana"}, {"jp": "りっぱ", "kana": "りっぱ", "roma": "", "ko": "훌륭함", "tip": "", "theme": "문맥규정", "track": "kana"}, {"jp": "りょうり", "kana": "りょうり", "roma": "", "ko": "요리", "tip": "", "theme": "문맥규정", "track": "kana"}, {"jp": "わかい", "kana": "わかい", "roma": "", "ko": "젊다", "tip": "", "theme": "문맥규정", "track": "kana"}, {"jp": "わすれる", "kana": "わすれる", "roma": "", "ko": "잊다", "tip": "", "theme": "문맥규정", "track": "kana"}, {"jp": "わたす", "kana": "わたす", "roma": "", "ko": "건네다", "tip": "", "theme": "문맥규정", "track": "kana"}, {"jp": "わたる", "kana": "わたる", "roma": "", "ko": "건너다", "tip": "", "theme": "문맥규정", "track": "kana"}, {"jp": "上", "kana": "うえ", "roma": "우에", "ko": "위", "tip": "‘위에’와 소리가 비슷해요.", "theme": "위치·방향", "track": "kanji"}, {"jp": "下", "kana": "した", "roma": "시타", "ko": "아래, 밑", "tip": "위 上(우에) ↔ 아래 下(시타).", "theme": "위치·방향", "track": "kanji"}, {"jp": "前", "kana": "まえ", "roma": "마에", "ko": "앞, 전", "tip": "내 ‘앞’에 있다고 장면으로 기억.", "theme": "위치·방향", "track": "kanji"}, {"jp": "後", "kana": "あと", "roma": "아토", "ko": "뒤, 나중", "tip": "“아, 또 나중에!” → 아토.", "theme": "위치·방향", "track": "kanji"}, {"jp": "中", "kana": "なか", "roma": "나카", "ko": "안, 속", "tip": "가방 안(나카)을 들여다보기.", "theme": "위치·방향", "track": "kanji"}, {"jp": "外", "kana": "そと", "roma": "소토", "ko": "밖", "tip": "안 中(나카) ↔ 밖 外(소토).", "theme": "위치·방향", "track": "kanji"}, {"jp": "左", "kana": "ひだり", "roma": "히다리", "ko": "왼쪽", "tip": "왼손을 들며 ‘히다리’.", "theme": "위치·방향", "track": "kanji"}, {"jp": "右", "kana": "みぎ", "roma": "미기", "ko": "오른쪽", "tip": "왼쪽 히다리 ↔ 오른쪽 미기.", "theme": "위치·방향", "track": "kanji"}, {"jp": "東", "kana": "ひがし", "roma": "히가시", "ko": "동쪽", "tip": "해가 뜨는 동쪽을 바라보기.", "theme": "위치·방향", "track": "kanji"}, {"jp": "西", "kana": "にし", "roma": "니시", "ko": "서쪽", "tip": "동 히가시 ↔ 서 니시.", "theme": "위치·방향", "track": "kanji"}, {"jp": "南", "kana": "みなみ", "roma": "미나미", "ko": "남쪽", "tip": "남쪽의 따뜻한 바다 장면.", "theme": "위치·방향", "track": "kanji"}, {"jp": "北", "kana": "きた", "roma": "키타", "ko": "북쪽", "tip": "북쪽에서 추위가 ‘왔다(きた)’.", "theme": "위치·방향", "track": "kanji"}, {"jp": "角", "kana": "かど", "roma": "카도", "ko": "모퉁이", "tip": "모퉁이에서 각(角)이 보여요.", "theme": "위치·방향", "track": "kanji"}, {"jp": "道", "kana": "みち", "roma": "미치", "ko": "길", "tip": "길을 잃으면 ‘미치’겠네.", "theme": "위치·방향", "track": "kanji"}, {"jp": "橋", "kana": "はし", "roma": "하시", "ko": "다리, 교량", "tip": "강 위의 긴 다리를 건너기.", "theme": "위치·방향", "track": "kanji"}, {"jp": "人", "kana": "ひと", "roma": "히토", "ko": "사람", "tip": "사람 한 명을 가리키며 히토.", "theme": "사람·가족", "track": "kanji"}, {"jp": "男", "kana": "おとこ", "roma": "오토코", "ko": "남자", "tip": "男の子의 앞부분이 ‘남자’.", "theme": "사람·가족", "track": "kanji"}, {"jp": "男の子", "kana": "おとこのこ", "roma": "오토코노코", "ko": "남자아이", "tip": "오토코(남자)+코(아이).", "theme": "사람·가족", "track": "kanji"}, {"jp": "女の子", "kana": "おんなのこ", "roma": "온나노코", "ko": "여자아이", "tip": "온나(여자)+코(아이).", "theme": "사람·가족", "track": "kanji"}, {"jp": "子ども", "kana": "こども", "roma": "코도모", "ko": "아이, 어린이", "tip": "‘코’가 아이를 나타낸다고 연결.", "theme": "사람·가족", "track": "kanji"}, {"jp": "大人", "kana": "おとな", "roma": "오토나", "ko": "어른", "tip": "코도모(아이) ↔ 오토나(어른).", "theme": "사람·가족", "track": "kanji"}, {"jp": "父", "kana": "ちち", "roma": "치치", "ko": "아버지", "tip": "내 아버지는 치치.", "theme": "사람·가족", "track": "kanji"}, {"jp": "母", "kana": "はは", "roma": "하하", "ko": "어머니", "tip": "내 어머니는 하하.", "theme": "사람·가족", "track": "kanji"}, {"jp": "兄", "kana": "あに", "roma": "아니", "ko": "형, 오빠", "tip": "“아니, 형!”으로 소리 연결.", "theme": "사람·가족", "track": "kanji"}, {"jp": "家族", "kana": "かぞく", "roma": "카조쿠", "ko": "가족", "tip": "가족이 한자리에 모인 장면.", "theme": "사람·가족", "track": "kanji"}, {"jp": "親", "kana": "りょうしん", "roma": "료오신", "ko": "부모님", "tip": "‘양쪽 부모’라는 한자 뜻으로 기억.", "theme": "사람·가족", "track": "kanji"}, {"jp": "友だち", "kana": "ともだち", "roma": "토모다치", "ko": "친구", "tip": "친구와 나란히 걷는 장면.", "theme": "사람·가족", "track": "kanji"}, {"jp": "先生", "kana": "せんせい", "roma": "센세이", "ko": "선생님", "tip": "익숙한 호칭 ‘센세이’.", "theme": "사람·가족", "track": "kanji"}, {"jp": "留生", "kana": "りゅうがくせい", "roma": "류우가쿠세이", "ko": "유학생", "tip": "류우가쿠(유학)+세이(학생).", "theme": "사람·가족", "track": "kanji"}, {"jp": "警官", "kana": "けいかん", "roma": "케이칸", "ko": "경찰관", "tip": "경찰관의 제복 장면. 038 おまわりさん おまわりさん 오마와리상 순경 동네를 돌아보는 경찰 아저씨.", "theme": "사람·가족", "track": "kanji"}, {"jp": "名前", "kana": "なまえ", "roma": "나마에", "ko": "이름", "tip": "자기 이름을 쓰며 나마에.", "theme": "사람·가족", "track": "kanji"}, {"jp": "手", "kana": "て", "roma": "테", "ko": "손", "tip": "손을 내밀며 짧게 ‘테’.", "theme": "몸·건강·옷", "track": "kanji"}, {"jp": "足", "kana": "あし", "roma": "아시", "ko": "발, 다리", "tip": "“아! 발이 아파.” → 아시.", "theme": "몸·건강·옷", "track": "kanji"}, {"jp": "耳", "kana": "みみ", "roma": "미미", "ko": "귀", "tip": "귀가 두 개라 ‘미미’ 두 번.", "theme": "몸·건강·옷", "track": "kanji"}, {"jp": "丈夫", "kana": "じょうぶ", "roma": "조오부", "ko": "튼튼함", "tip": "튼튼해서 괜찮다: 조오부.", "theme": "몸·건강·옷", "track": "kanji"}, {"jp": "痛い", "kana": "いたい", "roma": "이타이", "ko": "아프다", "tip": "아플 때 “이타이!”", "theme": "몸·건강·옷", "track": "kanji"}, {"jp": "疲れる", "kana": "つかれる", "roma": "츠카레루", "ko": "피곤하다", "tip": "일 끝나고 축 처진 장면.", "theme": "몸·건강·옷", "track": "kanji"}, {"jp": "風邪", "kana": "かぜ", "roma": "카제", "ko": "감기", "tip": "감기 걸려 콜록이는 장면.", "theme": "몸·건강·옷", "track": "kanji"}, {"jp": "風邪をひく", "kana": "かぜをひく", "roma": "카제오 히쿠", "ko": "감기에 걸리다", "tip": "카제(감기)를 ‘히쿠’.", "theme": "몸·건강·옷", "track": "kanji"}, {"jp": "帽子", "kana": "ぼうし", "roma": "보오시", "ko": "모자", "tip": "모자를 머리에 ‘보오시’ 씌우기.", "theme": "몸·건강·옷", "track": "kanji"}, {"jp": "洋服", "kana": "ようふく", "roma": "요오후쿠", "ko": "양복, 서양식 옷", "tip": "洋(서양)+服(옷).", "theme": "몸·건강·옷", "track": "kanji"}, {"jp": "校", "kana": "がっこう", "roma": "각코오", "ko": "학교", "tip": "작은 っ에서 ‘각-코오’로 멈춤.", "theme": "장소·교통", "track": "kanji"}, {"jp": "社", "kana": "かいしゃ", "roma": "카이샤", "ko": "회사", "tip": "회사원들이 출근하는 장면.", "theme": "장소·교통", "track": "kanji"}, {"jp": "銀行", "kana": "ぎんこう", "roma": "긴코오", "ko": "은행", "tip": "돈을 찾는 은행 창구.", "theme": "장소·교통", "track": "kanji"}, {"jp": "店", "kana": "みせ", "roma": "미세", "ko": "가게", "tip": "가게 문을 열며 ‘미세’.", "theme": "장소·교통", "track": "kanji"}, {"jp": "本屋", "kana": "ほんや", "roma": "혼야", "ko": "책방, 서점", "tip": "혼(책)+야(가게).", "theme": "장소·교통", "track": "kanji"}, {"jp": "公園", "kana": "こうえん", "roma": "코오엔", "ko": "공원", "tip": "공원에서 걷는 장면.", "theme": "장소·교통", "track": "kanji"}, {"jp": "書館", "kana": "としょかん", "roma": "토쇼칸", "ko": "도서관", "tip": "책이 가득한 조용한 곳.", "theme": "장소·교통", "track": "kanji"}, {"jp": "郵便局", "kana": "ゆうびんきょく", "roma": "유우빈쿄쿠", "ko": "우체국", "tip": "우표를 파는 곳.", "theme": "장소·교통", "track": "kanji"}, {"jp": "食堂", "kana": "しょくどう", "roma": "쇼쿠도오", "ko": "식당", "tip": "쇼쿠(먹다)+도오(공간).", "theme": "장소·교통", "track": "kanji"}, {"jp": "台所", "kana": "だいどころ", "roma": "다이도코로", "ko": "부엌", "tip": "밥을 만드는 곳.", "theme": "장소·교통", "track": "kanji"}, {"jp": "入り口", "kana": "いりぐち", "roma": "이리구치", "ko": "입구", "tip": "이리(들어감)+구치(문).", "theme": "장소·교통", "track": "kanji"}, {"jp": "お手洗い", "kana": "おてあらい", "roma": "오테아라이", "ko": "화장실", "tip": "손(테)을 씻는(아라이) 곳.", "theme": "장소·교통", "track": "kanji"}, {"jp": "車", "kana": "くるま", "roma": "쿠루마", "ko": "자동차", "tip": "차가 굴러오는 장면.", "theme": "장소·교통", "track": "kanji"}, {"jp": "電車", "kana": "でんしゃ", "roma": "덴샤", "ko": "전철", "tip": "덴(전기)+샤(차).", "theme": "장소·교통", "track": "kanji"}, {"jp": "雨", "kana": "あめ", "roma": "아메", "ko": "비", "tip": "비가 내리는 창밖을 보며 아메.", "theme": "자연·사물", "track": "kanji"}, {"jp": "空", "kana": "そら", "roma": "소라", "ko": "하늘", "tip": "파란 하늘을 올려다보기.", "theme": "자연·사물", "track": "kanji"}, {"jp": "川", "kana": "かわ", "roma": "카와", "ko": "강, 냇물", "tip": "강물이 ‘카와’ 흐르는 장면.", "theme": "자연·사물", "track": "kanji"}, {"jp": "山", "kana": "やま", "roma": "야마", "ko": "산", "tip": "높은 산을 가리키며 야마.", "theme": "자연·사물", "track": "kanji"}, {"jp": "木", "kana": "き", "roma": "키", "ko": "나무", "tip": "나무의 ‘키’가 크다.", "theme": "자연·사물", "track": "kanji"}, {"jp": "花", "kana": "はな", "roma": "하나", "ko": "꽃", "tip": "꽃 한 송이, ‘하나’.", "theme": "자연·사물", "track": "kanji"}, {"jp": "水", "kana": "みず", "roma": "미즈", "ko": "물", "tip": "시원한 물 한 잔.", "theme": "자연·사물", "track": "kanji"}, {"jp": "火", "kana": "ひ", "roma": "히", "ko": "불", "tip": "짧게 타오르는 불꽃 ‘히’.", "theme": "자연·사물", "track": "kanji"}, {"jp": "風", "kana": "かぜ", "roma": "카제", "ko": "바람", "tip": "바람이 얼굴을 스치는 장면.", "theme": "자연·사물", "track": "kanji"}, {"jp": "電話", "kana": "でんわ", "roma": "덴와", "ko": "전화", "tip": "전화벨이 울리는 장면.", "theme": "자연·사물", "track": "kanji"}, {"jp": "窓", "kana": "まど", "roma": "마도", "ko": "창문", "tip": "창문 밖을 보는 장면.", "theme": "자연·사물", "track": "kanji"}, {"jp": "冷庫", "kana": "れいぞうこ", "roma": "레이조오코", "ko": "냉장고", "tip": "차갑게 저장하는 상자.", "theme": "자연·사물", "track": "kanji"}, {"jp": "朝", "kana": "あさ", "roma": "아사", "ko": "아침", "tip": "아침 햇살을 보며 아사.", "theme": "시간·날짜", "track": "kanji"}, {"jp": "午後", "kana": "ごご", "roma": "고고", "ko": "오후", "tip": "고고(午後)는 정오 뒤.", "theme": "시간·날짜", "track": "kanji"}, {"jp": "午前", "kana": "ごぜん", "roma": "고젠", "ko": "오전", "tip": "고젠(午前)은 정오 앞.", "theme": "시간·날짜", "track": "kanji"}, {"jp": "明日", "kana": "あした", "roma": "아시타", "ko": "내일", "tip": "오늘 다음이 아시타.", "theme": "시간·날짜", "track": "kanji"}, {"jp": "夕べ", "kana": "ゆうべ", "roma": "유우베", "ko": "어젯밤", "tip": "어제 저녁 장면을 떠올리기.", "theme": "시간·날짜", "track": "kanji"}, {"jp": "一昨日", "kana": "おととい", "roma": "오토토이", "ko": "그저께", "tip": "어제보다 하루 더 전.", "theme": "시간·날짜", "track": "kanji"}, {"jp": "一昨年", "kana": "おととし", "roma": "오토토시", "ko": "재작년", "tip": "지난해보다 한 해 더 전.", "theme": "시간·날짜", "track": "kanji"}, {"jp": "今週", "kana": "こんしゅう", "roma": "콘슈우", "ko": "이번 주", "tip": "콘(지금)+슈우(주).", "theme": "시간·날짜", "track": "kanji"}, {"jp": "週", "kana": "らいしゅう", "roma": "라이슈우", "ko": "다음 주", "tip": "라이(올)+슈우(주).", "theme": "시간·날짜", "track": "kanji"}, {"jp": "今月", "kana": "こんげつ", "roma": "콘게츠", "ko": "이번 달", "tip": "콘(지금)+게츠(달).", "theme": "시간·날짜", "track": "kanji"}, {"jp": "日", "kana": "まいにち", "roma": "마이니치", "ko": "매일", "tip": "마이(매)+니치(날).", "theme": "시간·날짜", "track": "kanji"}, {"jp": "週", "kana": "まいしゅう", "roma": "마이슈우", "ko": "매주", "tip": "마이(매)+슈우(주).", "theme": "시간·날짜", "track": "kanji"}, {"jp": "初めて", "kana": "はじめて", "roma": "하지메테", "ko": "처음으로", "tip": "시작(하지메)의 첫 순간.", "theme": "시간·날짜", "track": "kanji"}, {"jp": "七時", "kana": "しちじ", "roma": "시치지", "ko": "7시", "tip": "시치(7)+지(시각).", "theme": "시간·날짜", "track": "kanji"}, {"jp": "火曜日", "kana": "かようび", "roma": "카요오비", "ko": "화요일", "tip": "火(불 화)+요일.", "theme": "시간·날짜", "track": "kanji"}, {"jp": "木曜日", "kana": "もくようび", "roma": "모쿠요오비", "ko": "목요일", "tip": "木(나무 목)+요일.", "theme": "시간·날짜", "track": "kanji"}, {"jp": "金曜日", "kana": "きんようび", "roma": "킨요오비", "ko": "금요일", "tip": "金(쇠 금)+요일.", "theme": "시간·날짜", "track": "kanji"}, {"jp": "土曜日", "kana": "どようび", "roma": "도요오비", "ko": "토요일", "tip": "土(흙 토)+요일.", "theme": "시간·날짜", "track": "kanji"}, {"jp": "二日", "kana": "ふつか", "roma": "후츠카", "ko": "2일, 초이틀", "tip": "날짜 2일은 특별히 후츠카.", "theme": "시간·날짜", "track": "kanji"}, {"jp": "六日", "kana": "むいか", "roma": "무이카", "ko": "6일", "tip": "날짜 6일은 무이카.", "theme": "시간·날짜", "track": "kanji"}, {"jp": "八日", "kana": "ようか", "roma": "요오카", "ko": "8일", "tip": "날짜 8일은 요오카.", "theme": "시간·날짜", "track": "kanji"}, {"jp": "十日", "kana": "とおか", "roma": "토오카", "ko": "10일", "tip": "날짜 10일은 토오카.", "theme": "시간·날짜", "track": "kanji"}, {"jp": "一度", "kana": "いちど", "roma": "이치도", "ko": "한 번", "tip": "이치(1)+도(회).", "theme": "수·단위", "track": "kanji"}, {"jp": "五つ", "kana": "いつつ", "roma": "이츠츠", "ko": "다섯 개", "tip": "물건 다섯 개를 세며 이츠츠.", "theme": "수·단위", "track": "kanji"}, {"jp": "何人", "kana": "なんにん", "roma": "난닌", "ko": "몇 명", "tip": "난(몇)+닌(사람).", "theme": "수·단위", "track": "kanji"}, {"jp": "何個", "kana": "なんこ", "roma": "난코", "ko": "몇 개", "tip": "난(몇)+코(개).", "theme": "수·단위", "track": "kanji"}, {"jp": "一台", "kana": "いちだい", "roma": "이치다이", "ko": "한 대", "tip": "이치(1)+다이(대).", "theme": "수·단위", "track": "kanji"}, {"jp": "二台", "kana": "にだい", "roma": "니다이", "ko": "두 대", "tip": "니(2)+다이(대).", "theme": "수·단위", "track": "kanji"}, {"jp": "二匹", "kana": "にひき", "roma": "니히키", "ko": "두 마리", "tip": "니(2)+히키(작은 동물).", "theme": "수·단위", "track": "kanji"}, {"jp": "二冊", "kana": "にさつ", "roma": "니사츠", "ko": "두 권", "tip": "니(2)+사츠(책 권).", "theme": "수·단위", "track": "kanji"}, {"jp": "三冊", "kana": "さんさつ", "roma": "산사츠", "ko": "세 권", "tip": "산(3)+사츠(권).", "theme": "수·단위", "track": "kanji"}, {"jp": "三回", "kana": "さんかい", "roma": "산카이", "ko": "세 번", "tip": "산(3)+카이(회).", "theme": "수·단위", "track": "kanji"}, {"jp": "二階", "kana": "にかい", "roma": "니카이", "ko": "2층", "tip": "니(2)+카이(층).", "theme": "수·단위", "track": "kanji"}, {"jp": "二キロ", "kana": "にきろ", "roma": "니키로", "ko": "2킬로미터", "tip": "니(2)+킬로.", "theme": "수·단위", "track": "kanji"}, {"jp": "千円", "kana": "せんえん", "roma": "센엔", "ko": "1,000엔", "tip": "센(천)+엔.", "theme": "수·단위", "track": "kanji"}, {"jp": "八十円", "kana": "はちじゅうえん", "roma": "하치주우엔", "ko": "80엔", "tip": "하치주우(80)+엔.", "theme": "수·단위", "track": "kanji"}, {"jp": "半分", "kana": "はんぶん", "roma": "한분", "ko": "반, 절반", "tip": "한(반)+분(부분).", "theme": "수·단위", "track": "kanji"}, {"jp": "行く", "kana": "いく", "roma": "이쿠", "ko": "가다", "tip": "이쿠(가다) ↔ 쿠루(오다).", "theme": "동작·이동", "track": "kanji"}, {"jp": "出る", "kana": "でる", "roma": "데루", "ko": "나가다, 나오다", "tip": "밖으로 데루.", "theme": "동작·이동", "track": "kanji"}, {"jp": "入る", "kana": "はいる", "roma": "하이루", "ko": "들어가다", "tip": "입구로 하이루.", "theme": "동작·이동", "track": "kanji"}, {"jp": "出かける", "kana": "でかける", "roma": "데카케루", "ko": "외출하다", "tip": "집을 나가 외출하는 장면.", "theme": "동작·이동", "track": "kanji"}, {"jp": "曲がる", "kana": "まがる", "roma": "마가루", "ko": "돌다, 방향을 틀다", "tip": "모퉁이에서 몸을 틀기.", "theme": "동작·이동", "track": "kanji"}, {"jp": "渡る", "kana": "わたる", "roma": "와타루", "ko": "건너다", "tip": "다리를 건너 반대편으로.", "theme": "동작·이동", "track": "kanji"}, {"jp": "登る", "kana": "のぼる", "roma": "노보루", "ko": "오르다", "tip": "산 위로 올라가는 장면.", "theme": "동작·이동", "track": "kanji"}, {"jp": "飛ぶ", "kana": "とぶ", "roma": "토부", "ko": "날다", "tip": "새가 하늘로 톡 날아요.", "theme": "동작·이동", "track": "kanji"}, {"jp": "止まる", "kana": "とまる", "roma": "토마루", "ko": "멈추다", "tip": "정류장에서 차가 멈춤.", "theme": "동작·이동", "track": "kanji"}, {"jp": "降りる", "kana": "おりる", "roma": "오리루", "ko": "내리다", "tip": "노루(타다) ↔ 오리루(내리다).", "theme": "동작·이동", "track": "kanji"}, {"jp": "泳ぐ", "kana": "およぐ", "roma": "오요구", "ko": "헤엄치다", "tip": "수영장에서 헤엄치는 장면.", "theme": "동작·이동", "track": "kanji"}, {"jp": "遊ぶ", "kana": "あそぶ", "roma": "아소부", "ko": "놀다", "tip": "친구와 신나게 노는 장면.", "theme": "동작·이동", "track": "kanji"}, {"jp": "言う", "kana": "いう", "roma": "이우", "ko": "말하다", "tip": "‘이유’를 말하다 → 이우.", "theme": "생활 동작", "track": "kanji"}, {"jp": "聞く", "kana": "きく", "roma": "키쿠", "ko": "듣다, 묻다", "tip": "귀를 기울여 키쿠.", "theme": "생활 동작", "track": "kanji"}, {"jp": "書く", "kana": "かく", "roma": "카쿠", "ko": "쓰다, 적다", "tip": "각(획)을 써 내려가기.", "theme": "생활 동작", "track": "kanji"}, {"jp": "見る", "kana": "みる", "roma": "미루", "ko": "보다", "tip": "눈으로 미루(보다).", "theme": "생활 동작", "track": "kanji"}, {"jp": "見せる", "kana": "みせる", "roma": "미세루", "ko": "보여 주다", "tip": "미루(보다)→미세루(보여주다).", "theme": "생활 동작", "track": "kanji"}, {"jp": "忘れる", "kana": "わすれる", "roma": "와스레루", "ko": "잊다", "tip": "오보에루(기억) ↔ 와스레루(잊다).", "theme": "생활 동작", "track": "kanji"}, {"jp": "習う", "kana": "ならう", "roma": "나라우", "ko": "배우다", "tip": "선생님을 따라 배우기.", "theme": "생활 동작", "track": "kanji"}, {"jp": "勉する", "kana": "べんきょうする", "roma": "벤쿄오스루", "ko": "공부하다", "tip": "벤쿄오(공부)+스루(하다).", "theme": "생활 동작", "track": "kanji"}, {"jp": "質問する", "kana": "しつもんする", "roma": "시츠몬스루", "ko": "질문하다", "tip": "시츠몬(질문)+스루.", "theme": "생활 동작", "track": "kanji"}, {"jp": "勤める", "kana": "つとめる", "roma": "츠토메루", "ko": "근무하다", "tip": "회사에 꾸준히 다니기.", "theme": "생활 동작", "track": "kanji"}, {"jp": "休む", "kana": "やすむ", "roma": "야스무", "ko": "쉬다", "tip": "야스이와 소리 연결, 편히 쉬기.", "theme": "생활 동작", "track": "kanji"}, {"jp": "結婚する", "kana": "けっこんする", "roma": "켓콘스루", "ko": "결혼하다", "tip": "켓콘(결혼)+스루.", "theme": "생활 동작", "track": "kanji"}, {"jp": "選ぶ", "kana": "えらぶ", "roma": "에라부", "ko": "고르다", "tip": "둘 중 하나를 손으로 고르기.", "theme": "생활 동작", "track": "kanji"}, {"jp": "買う", "kana": "かう", "roma": "카우", "ko": "사다", "tip": "“카우!” 하고 물건 사기.", "theme": "생활 동작", "track": "kanji"}, {"jp": "返す", "kana": "かえす", "roma": "카에스", "ko": "돌려주다", "tip": "빌린 것을 원래 자리로.", "theme": "생활 동작", "track": "kanji"}, {"jp": "渡す", "kana": "わたす", "roma": "와타스", "ko": "건네다", "tip": "손에서 손으로 건네기.", "theme": "생활 동작", "track": "kanji"}, {"jp": "取る", "kana": "とる", "roma": "토루", "ko": "집다, 잡다; 찍다", "tip": "손으로 잡거나 사진을 찍는 동작.", "theme": "생활 동작", "track": "kanji"}, {"jp": "置く", "kana": "おく", "roma": "오쿠", "ko": "놓다, 두다", "tip": "책을 책상 위에 놓기.", "theme": "생활 동작", "track": "kanji"}, {"jp": "並べる", "kana": "ならべる", "roma": "나라베루", "ko": "늘어놓다, 진열하다", "tip": "물건을 나란히 놓기.", "theme": "생활 동작", "track": "kanji"}, {"jp": "入れる", "kana": "いれる", "roma": "이레루", "ko": "넣다", "tip": "하이루(들어가다)와 연결.", "theme": "생활 동작", "track": "kanji"}, {"jp": "出す", "kana": "だす", "roma": "다스", "ko": "내다, 제출하다", "tip": "가방에서 꺼내 제출하기.", "theme": "생활 동작", "track": "kanji"}, {"jp": "押す", "kana": "おす", "roma": "오스", "ko": "누르다, 밀다", "tip": "버튼을 꾹 누르기.", "theme": "생활 동작", "track": "kanji"}, {"jp": "切る", "kana": "きる", "roma": "키루", "ko": "자르다", "tip": "칼로 ‘키륵’ 자르기.", "theme": "생활 동작", "track": "kanji"}, {"jp": "貼る", "kana": "はる", "roma": "하루", "ko": "붙이다", "tip": "벽에 종이를 붙이는 장면.", "theme": "생활 동작", "track": "kanji"}, {"jp": "食べる", "kana": "たべる", "roma": "타베루", "ko": "먹다", "tip": "타베루(먹다) ↔ 노무(마시다).", "theme": "먹기·집안일", "track": "kanji"}, {"jp": "み物", "kana": "のみもの", "roma": "노미모노", "ko": "마실 것, 음료", "tip": "노미(마심)+모노(것).", "theme": "먹기·집안일", "track": "kanji"}, {"jp": "料理", "kana": "りょうり", "roma": "료오리", "ko": "요리", "tip": "익숙한 일본어 ‘료리’.", "theme": "먹기·집안일", "track": "kanji"}, {"jp": "野菜", "kana": "やさい", "roma": "야사이", "ko": "채소, 야채", "tip": "한국어 ‘야채’와 소리 연결.", "theme": "먹기·집안일", "track": "kanji"}, {"jp": "果物", "kana": "くだもの", "roma": "쿠다모노", "ko": "과일", "tip": "사과·바나나를 한 바구니에.", "theme": "먹기·집안일", "track": "kanji"}, {"jp": "魚", "kana": "さかな", "roma": "사카나", "ko": "생선, 물고기", "tip": "물속 물고기를 보며 사카나.", "theme": "먹기·집안일", "track": "kanji"}, {"jp": "紅茶", "kana": "こうちゃ", "roma": "코오차", "ko": "홍차", "tip": "차(ちゃ)가 들어간 붉은 차.", "theme": "먹기·집안일", "track": "kanji"}, {"jp": "牛乳", "kana": "ぎゅうにゅう", "roma": "규우뉴우", "ko": "우유", "tip": "牛(소)+乳(젖).", "theme": "먹기·집안일", "track": "kanji"}, {"jp": "洗う", "kana": "あらう", "roma": "아라우", "ko": "씻다", "tip": "물을 틀어 손을 씻기.", "theme": "먹기·집안일", "track": "kanji"}, {"jp": "磨く", "kana": "みがく", "roma": "미가쿠", "ko": "닦다", "tip": "이를 반짝반짝 닦기.", "theme": "먹기·집안일", "track": "kanji"}, {"jp": "掃除する", "kana": "そうじする", "roma": "소오지스루", "ko": "청소하다", "tip": "소오지(청소)+스루.", "theme": "먹기·집안일", "track": "kanji"}, {"jp": "洗濯する", "kana": "せんたくする", "roma": "센타쿠스루", "ko": "세탁하다", "tip": "센타쿠(세탁)+스루. 196 お風呂に入る おふろにはいる 오후로니 하이루 목욕하다 욕조(오후로)에 들어가다. 197 シャワを浴びる しゃわをあびる 샤와아오 아비루 샤워하다 샤워 물을 온몸에 받기.", "theme": "먹기·집안일", "track": "kanji"}, {"jp": "大きい", "kana": "おおきい", "roma": "오오키이", "ko": "크다", "tip": "“오오! 키가 크다!”", "theme": "성질·상태", "track": "kanji"}, {"jp": "小さい", "kana": "ちいさい", "roma": "치이사이", "ko": "작다", "tip": "오오키이 ↔ 치이사이.", "theme": "성질·상태", "track": "kanji"}, {"jp": "高い", "kana": "たかい", "roma": "타카이", "ko": "높다, 비싸다", "tip": "높은 가격표를 올려다보기.", "theme": "성질·상태", "track": "kanji"}, {"jp": "安い", "kana": "やすい", "roma": "야스이", "ko": "싸다", "tip": "타카이(비싸다) ↔ 야스이.", "theme": "성질·상태", "track": "kanji"}, {"jp": "長い", "kana": "ながい", "roma": "나가이", "ko": "길다", "tip": "길게 늘어난 선을 떠올리기.", "theme": "성질·상태", "track": "kanji"}, {"jp": "細い", "kana": "ほそい", "roma": "호소이", "ko": "가늘다", "tip": "가느다란 실 한 줄.", "theme": "성질·상태", "track": "kanji"}, {"jp": "重い", "kana": "おもい", "roma": "오모이", "ko": "무겁다", "tip": "무거워 “오…” 소리 내기.", "theme": "성질·상태", "track": "kanji"}, {"jp": "薄い", "kana": "うすい", "roma": "우스이", "ko": "얇다, 연하다", "tip": "얇은 종이 한 장.", "theme": "성질·상태", "track": "kanji"}, {"jp": "新しい", "kana": "あたらしい", "roma": "아타라시이", "ko": "새롭다", "tip": "새 물건의 반짝이는 모습.", "theme": "성질·상태", "track": "kanji"}, {"jp": "古い", "kana": "ふるい", "roma": "후루이", "ko": "오래되다, 낡다", "tip": "아타라시이 ↔ 후루이.", "theme": "성질·상태", "track": "kanji"}, {"jp": "白い", "kana": "しろい", "roma": "시로이", "ko": "하얗다", "tip": "흰 눈을 보며 시로이.", "theme": "성질·상태", "track": "kanji"}, {"jp": "赤い", "kana": "あかい", "roma": "아카이", "ko": "빨갛다", "tip": "빨간 사과를 보며 아카이.", "theme": "성질·상태", "track": "kanji"}, {"jp": "明るい", "kana": "あかるい", "roma": "아카루이", "ko": "밝다", "tip": "불이 켜져 밝아지는 방.", "theme": "성질·상태", "track": "kanji"}, {"jp": "暗い", "kana": "くらい", "roma": "쿠라이", "ko": "어둡다", "tip": "아카루이(밝다) ↔ 쿠라이.", "theme": "성질·상태", "track": "kanji"}, {"jp": "暖かい", "kana": "あたたかい", "roma": "아타타카이", "ko": "따뜻하다", "tip": "따뜻한 난로 앞 장면.", "theme": "성질·상태", "track": "kanji"}, {"jp": "冷たい", "kana": "つめたい", "roma": "츠메타이", "ko": "차갑다", "tip": "차가운 얼음을 만지기.", "theme": "성질·상태", "track": "kanji"}, {"jp": "危ない", "kana": "あぶない", "roma": "아부나이", "ko": "위험하다", "tip": "위험할 때 “아부나이!”", "theme": "성질·상태", "track": "kanji"}, {"jp": "汚い", "kana": "きたない", "roma": "키타나이", "ko": "더럽다", "tip": "깨끗한 키레이 ↔ 키타나이.", "theme": "성질·상태", "track": "kanji"}, {"jp": "便利", "kana": "べんり", "roma": "벤리", "ko": "편리함", "tip": "한국 한자어 ‘편리’와 연결.", "theme": "성질·상태", "track": "kanji"}, {"jp": "立派", "kana": "りっぱ", "roma": "립파", "ko": "훌륭함", "tip": "훌륭한 건물을 올려다보기.", "theme": "성질·상태", "track": "kanji"}, {"jp": "有名", "kana": "ゆうめい", "roma": "유우메이", "ko": "유명함", "tip": "한국 한자어 ‘유명’과 연결.", "theme": "성질·상태", "track": "kanji"}, {"jp": "若い", "kana": "わかい", "roma": "와카이", "ko": "젊다", "tip": "활기찬 젊은 사람.", "theme": "성질·상태", "track": "kanji"}, {"jp": "忙しい", "kana": "いそがしい", "roma": "이소가시이", "ko": "바쁘다", "tip": "일이 쌓여 분주한 장면.", "theme": "성질·상태", "track": "kanji"}, {"jp": "暇", "kana": "ひま", "roma": "히마", "ko": "한가함", "tip": "이소가시이(바쁨) ↔ 히마.", "theme": "성질·상태", "track": "kanji"}, {"jp": "甘い", "kana": "あまい", "roma": "아마이", "ko": "달다", "tip": "“아, 많이 달다!” → 아마이.", "theme": "맛·감정·평가", "track": "kanji"}, {"jp": "辛い", "kana": "からい", "roma": "카라이", "ko": "맵다", "tip": "“카!” 하고 매워하는 장면.", "theme": "맛·감정·평가", "track": "kanji"}, {"jp": "好き", "kana": "すき", "roma": "스키", "ko": "좋아함", "tip": "좋아하는 것에 ‘스키!’", "theme": "맛·감정·평가", "track": "kanji"}, {"jp": "嫌い", "kana": "きらい", "roma": "키라이", "ko": "싫어함", "tip": "스키 ↔ 키라이.", "theme": "맛·감정·평가", "track": "kanji"}, {"jp": "面白い", "kana": "おもしろい", "roma": "오모시로이", "ko": "재미있다", "tip": "재미있는 만화를 보며 웃기.", "theme": "맛·감정·평가", "track": "kanji"}, {"jp": "上手", "kana": "じょうず", "roma": "조오즈", "ko": "능숙함, 잘함", "tip": "칭찬할 때 “조오즈!”", "theme": "맛·감정·평가", "track": "kanji"}, {"jp": "下手", "kana": "へた", "roma": "헤타", "ko": "서툼", "tip": "조오즈 ↔ 헤타.", "theme": "맛·감정·평가", "track": "kanji"}, {"jp": "易しい", "kana": "やさしい", "roma": "야사시이", "ko": "쉽다", "tip": "어려운 무즈카시이 ↔ 야사시이.", "theme": "맛·감정·평가", "track": "kanji"}, {"jp": "大切", "kana": "たいせつ", "roma": "타이세츠", "ko": "중요함, 소중함", "tip": "소중한 것을 두 손으로 안기.", "theme": "맛·감정·평가", "track": "kanji"}, {"jp": "大丈夫", "kana": "だいじょうぶ", "roma": "다이조오부", "ko": "괜찮음", "tip": "“다이조오부?” = “괜찮아?”", "theme": "맛·감정·평가", "track": "kanji"}, {"jp": "大勢", "kana": "おおぜい", "roma": "오오제이", "ko": "많은 사람", "tip": "사람이 우르르 많이 모임.", "theme": "자주 쓰는 말", "track": "kanji"}, {"jp": "違います", "kana": "ちがいます", "roma": "치가이마스", "ko": "아닙니다, 틀립니다", "tip": "다르다(치가우)의 공손한 말. 254 どうぞよろしく どうぞよろしく 도오조 요로시쿠 잘 부탁합니다 첫인사의 한 덩어리로 기억.", "theme": "자주 쓰는 말", "track": "kanji"}];
+const GRAMMAR={"groups": {"1": [["あう", "만나다"], ["かく", "쓰다"], ["はなす", "이야기하다"], ["まつ", "기다리다"], ["しぬ", "죽다"], ["よぶ", "부르다"], ["のむ", "마시다"], ["はじまる", "시작되다"], ["あつまる", "모이다"], ["つくる", "만들다"], ["とおる", "지나가다"]], "2": [["おきる", "일어나다"], ["みる", "보다"], ["かりる", "빌리다"], ["きる", "입다"], ["できる", "할 수 있다"], ["たべる", "먹다"], ["あける", "열다"], ["でる", "나가다"], ["ねる", "자다"]], "3": [["くる", "오다"], ["する", "하다"]]}, "masu": [["あう", "あいます", "만납니다", "1"], ["まつ", "まちます", "기다립니다", "1"], ["よぶ", "よびます", "부릅니다", "1"], ["つくる", "つくります", "만듭니다", "1"], ["みる", "みます", "봅니다", "2"], ["たべる", "たべます", "먹습니다", "2"], ["あける", "あけます", "엽니다", "2"], ["おきる", "おきます", "일어납니다", "2"], ["くる", "きます", "옵니다", "3"], ["する", "します", "합니다", "3"]], "nai": [["あう", "あわない", "만나지 않는다", "1"], ["かく", "かかない", "쓰지 않는다", "1"], ["のむ", "のまない", "마시지 않는다", "1"], ["つくる", "つくらない", "만들지 않는다", "1"], ["みる", "みない", "보지 않는다", "2"], ["たべる", "たべない", "먹지 않는다", "2"], ["でる", "でない", "나가지 않는다", "2"], ["くる", "こない", "오지 않는다", "3"], ["する", "しない", "하지 않는다", "3"]], "points": [["~ません", "~하지 않습니다", "がっこうにはまいにちいきません。", "학교는 매일 가지 않습니다."], ["~ませんか", "~하지 않겠습니까? (권유)", "いっしょにうたをうたいませんか。", "함께 노래를 부르지 않겠습니까?"], ["~ましょう", "~합시다", "もくようびにあいましょう。", "목요일에 만납시다."], ["~にいく", "~하러 가다", "かぞくとはなみにいきます。", "가족과 꽃구경하러 갑니다."], ["~たい", "~하고 싶다", "にほんりょうりがたべたいです。", "일본요리를 먹고 싶습니다."], ["~ないでください", "~하지 마세요", "たばこをすわないでください。", "담배를 피우지 마세요."], ["~ないほうがいい", "~하지 않는 편이 좋다", "おさけはのまないほうがいいです。", "술은 마시지 않는 편이 좋습니다."], ["~なければならない", "~하지 않으면 안 된다", "くすりをのまなければならない。", "약을 먹지 않으면 안 된다."], ["~なくてもいい", "~하지 않아도 된다", "かれとはあわなくてもいいです。", "그와는 만나지 않아도 됩니다."]], "sent": [["この コンピューターは（　）ください。", ["つかわないで", "つかいないで", "つかうないで", "つからないで"], 0, "つかう의 ない형은 つかわない. ~ないでください=~하지 마세요.", "코노 콤퓨-타-와 츠카와나이데 쿠다사이.", "이 컴퓨터는 사용하지 마세요."], ["ひるごはんを いっしょに（　）。", ["たべませんか", "たべりませんか", "たべれませんか", "たべらませんか"], 0, "たべる ます형은 たべます. ~ませんか=~하지 않겠습니까?(권유)", "히루고항오 잇쇼니 타베마셍카.", "점심을 함께 먹지 않겠습니까?"], ["つめたい みずが（　）です。", ["のみたい", "のむたい", "のまたい", "のめたい"], 0, "のむ ます형 のみ + たい. ~たい=~하고 싶다.", "츠메타이 미즈가 노미타이 데스.", "차가운 물을 마시고 싶습니다."], ["あしたまでに ほんを（　）。", ["かえさなければなりません", "かえすなければなりません", "かえしなければなりません", "かえせなければなりません"], 0, "かえす ない형 かえさない → ~なければならない=~하지 않으면 안 된다.", "아시타마데니 홍오 카에사나케레바나리마셍.", "내일까지 책을 돌려주지 않으면 안 됩니다."], ["びじゅつかんで しゃしんを（　）。", ["とらないでください", "とりないでください", "とるないでください", "とらなくてください"], 0, "とる ない형 とらない + でください.", "비주츠칸데 샤싱오 토라나이데 쿠다사이.", "미술관에서 사진을 찍지 마세요."], ["ともだちに（　）いきます。", ["あいに", "あうに", "あいへ", "あって"], 0, "あう ます형 あい + に行く=~하러 가다.", "토모다치니 아이니 이키마스.", "친구를 만나러 갑니다."], ["あさ くすりを（　）いいです。", ["のまなくても", "のまないでも", "のまなくて", "のまなければ"], 0, "のむ ない형 のまない → ~なくてもいい=~하지 않아도 된다.", "아사 쿠스리오 노마나쿠테모 이이데스.", "아침에 약을 먹지 않아도 됩니다."], ["からだに わるいから、おさけは（　）ほうが いいです。", ["のまない", "のむ", "のみない", "のまなくて"], 0, "~ないほうがいい=~하지 않는 편이 좋다.", "카라다니 와루이카라, 오사케와 노마나이 호-가 이이데스.", "몸에 나쁘니까, 술은 마시지 않는 편이 좋습니다."], ["いっしょに こうえんへ（　）。", ["いきましょう", "いきません", "いきたいです", "いきました"], 0, "~ましょう=~합시다(권유).", "잇쇼니 코-엥에 이키마쇼-.", "함께 공원에 갑시다."], ["この まちは とても（　）です。", ["しずか", "しずかな", "しずかく", "しずかい"], 0, "しずか는 な형용사. 정중 현재는 しずかです.", "코노 마치와 토테모 시즈카 데스.", "이 동네는 매우 조용합니다."], ["きのうの テストは（　）。", ["むずかしかったです", "むずかしいでした", "むずかしくでした", "むずかしいました"], 0, "むずかしい는 い형용사. 과거 정중은 むずかしかったです.", "키노-노 테스토와 무즈카시캇타데스.", "어제 시험은 어려웠습니다."]]};
+const KEY='n5vocab3';
+const GOAL_KANA=20, GOAL_KANJI=5;
+const EXAM='2026-12-06';
+const INTERVAL=[0,1,3,7,16,30];
+let DB={ version:3, seeded:false, words:[], dailyK:{}, dailyJ:{} };
+
+function load(){ try{ const s=localStorage.getItem(KEY); if(s) DB=Object.assign(DB,JSON.parse(s)); }catch(e){} }
+function save(){ try{ localStorage.setItem(KEY,JSON.stringify(DB)); }catch(e){} }
+function $(id){ return document.getElementById(id); }
+function now(){ return Date.now(); }
+function todayKey(){ const d=new Date(); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+function shuffle(a){ a=a.slice(); for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
+function esc(s){ return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function newId(){ return now()+Math.floor(Math.random()*100000); }
+function speak(text){
+  if(!text) return;
+  if(!('speechSynthesis' in window)){ if($('voice-msg'))$('voice-msg').textContent='이 브라우저는 음성을 지원하지 않아요.'; return; }
+  speechSynthesis.cancel();
+  const u=new SpeechSynthesisUtterance(text); u.lang='ja-JP'; u.rate=0.9;
+  const jp=speechSynthesis.getVoices().find(v=>v.lang.indexOf('ja')===0);
+  if(jp) u.voice=jp;
+  speechSynthesis.speak(u);
+}
+function seedWords(force){
+  const have=new Set(DB.words.map(w=>w.jp+'|'+w.kana));
+  let added=0;
+  SEED.forEach(s=>{
+    if(have.has(s.jp+'|'+s.kana)) return;
+    DB.words.push({ id:newId(), jp:s.jp, kana:s.kana, roma:s.roma||'', ko:s.ko, tip:s.tip||'', theme:s.theme||'기타', track:s.track||(/[一-鿿]/.test(s.jp)?'kanji':'kana'), box:1, ok:0, ng:0, next:0, seed:true });
+    added++;
+  });
+  DB.seeded=true; save(); return added;
+}
+function cur(){ return TODAY.list[TODAY.i]; }
+
+function showView(name){
+  ['today','words','grammar','stats','settings'].forEach(v=>{
+    $('view-'+v).classList.toggle('hidden', v!==name);
+    $('nav-'+v).classList.toggle('on', v===name);
+  });
+  if(name==='today') renderTodayHome();
+  if(name==='words'){ buildThemePick(); startWMode(); }
+  if(name==='grammar') startGMode();
+  if(name==='stats') renderStats();
+}
+
+/* ============ 오늘 ============ */
+let TODAY={ list:[], i:0, flipped:false, ok:0 };
+function todayK(){ return DB.dailyK[todayKey()]||0; }
+function todayJ(){ return DB.dailyJ[todayKey()]||0; }
+function wrongWords(){ return DB.words.filter(w=>w.wrong); }
+function renderTodayHome(){
+  const k=Math.min(todayK(),GOAL_KANA), j=Math.min(todayJ(),GOAL_KANJI);
+  $('tk-count').textContent=todayK()+' / '+GOAL_KANA;
+  $('tk-bar').style.width=(k/GOAL_KANA*100)+'%';
+  $('tj-count').textContent=todayJ()+' / '+GOAL_KANJI;
+  $('tj-bar').style.width=(j/GOAL_KANJI*100)+'%';
+  const wc=$('t-wrong'); if(wc) wc.textContent=wrongWords().length;
+  $('t-session').classList.add('hidden'); $('t-done').classList.add('hidden');
+}
+function buildTrack(track, goal){
+  const pool=DB.words.filter(w=>w.track===track);
+  const due=pool.filter(w=>(w.ok+w.ng)>0 && (w.next||0)<=now()).sort((a,b)=>(a.next||0)-(b.next||0));
+  const fresh=pool.filter(w=>(w.ok+w.ng)===0);
+  const sess=[];
+  for(const w of due){ if(sess.length>=goal) break; sess.push(w); }
+  for(const w of shuffle(fresh)){ if(sess.length>=goal) break; sess.push(w); }
+  return sess;
+}
+function runSession(list){
+  TODAY={ list, i:0, flipped:false, ok:0 };
+  $('t-done').classList.add('hidden');
+  $('t-session').classList.remove('hidden');
+  renderTCard();
+}
+function startTrack(track){
+  const goal=(track==='kana')?GOAL_KANA:GOAL_KANJI;
+  const list=buildTrack(track, goal);
+  if(list.length===0){ alert('이 트랙에서 지금 학습할 단어가 없어요. 나중에 복습하러 오세요.'); return; }
+  runSession(list);
+}
+function startWrong(){
+  const list=shuffle(wrongWords());
+  if(list.length===0){ alert('틀린 단어가 없어요. 잘하고 있어요! 👍'); return; }
+  runSession(list);
+}
+function bump(w){ const k=todayKey(); if(w&&w.track==='kanji'){ DB.dailyJ[k]=(DB.dailyJ[k]||0)+1; } else { DB.dailyK[k]=(DB.dailyK[k]||0)+1; } }
+function renderTCard(){
+  const w=cur(); TODAY.flipped=false;
+  $('t-jp').textContent=w.jp;
+  $('t-read').textContent=w.kana+(w.roma?'  ·  '+w.roma:'');
+  $('t-ko').textContent=w.ko;
+  $('t-tip').textContent=w.tip||'';
+  $('t-back').classList.add('hidden');
+  $('t-hint').textContent='카드를 눌러 뜻·발음 보기';
+  $('t-grade').style.display='none';
+  $('t-prog').textContent=(TODAY.i+1)+' / '+TODAY.list.length;
+}
+function tFlip(){
+  if(TODAY.flipped) return;
+  TODAY.flipped=true;
+  $('t-back').classList.remove('hidden');
+  $('t-hint').textContent='기억났나요?';
+  $('t-grade').style.display='flex';
+  speak(cur().kana);
+}
+function tGrade(good){
+  const w=cur();
+  if(good){ w.ok++; w.box=Math.min(5,w.box+1); TODAY.ok++; } else { w.ng++; w.box=1; }
+  w.wrong=!good;
+  w.next=now()+INTERVAL[w.box]*86400000;
+  bump(w);
+  save();
+  TODAY.i++;
+  if(TODAY.i<TODAY.list.length) renderTCard();
+  else {
+    $('t-session').classList.add('hidden');
+    $('t-done').classList.remove('hidden');
+    $('t-summary').innerHTML='이번 세션 '+TODAY.list.length+'개 중 <b>'+TODAY.ok+'개</b>를 맞혔어요.<br>오늘: 히라가나 '+todayK()+' · 한자 '+todayJ();
+  }
+  renderTodayHome();
+  $('t-session').classList.toggle('hidden', TODAY.i>=TODAY.list.length);
+}
+
+/* ============ 단어 ============ */
+let WMODE='card', SCOPE='전체', wDeck=[], WIDX=0, WQUIZ=null, WQTYPE='mean';
+function hasKanji(w){ return /[一-鿿]/.test(w.jp); }
+function themes(){ const t=[]; DB.words.forEach(w=>{ if(t.indexOf(w.theme)<0) t.push(w.theme); }); return t; }
+function buildThemePick(){
+  const box=$('w-theme'); const ts=['전체'].concat(themes());
+  box.innerHTML=ts.map(t=>'<button data-t="'+esc(t)+'"'+(t===SCOPE?' class="on"':'')+'>'+esc(t)+'</button>').join('');
+  box.querySelectorAll('button').forEach(b=> b.onclick=()=>{ SCOPE=b.dataset.t; buildThemePick(); startWMode(); });
+}
+function scopeWords(){ return SCOPE==='전체'?DB.words:DB.words.filter(w=>w.theme===SCOPE); }
+function startWMode(){
+  ['card','quiz','list','add'].forEach(m=> $('wm-'+m).classList.toggle('hidden', m!==WMODE));
+  document.querySelectorAll('#w-mode button').forEach(b=> b.classList.toggle('on', b.dataset.m===WMODE));
+  if(WMODE==='card'){ wDeck=scopeWords(); WIDX=0; renderWCard(); }
+  else if(WMODE==='quiz') startWQuiz();
+  else if(WMODE==='list') renderWList();
+}
+function renderWCard(){
+  if(wDeck.length===0){ $('w-jp').textContent='—'; $('w-hint').textContent='이 범위에 단어가 없어요'; $('w-cnt').textContent=''; $('w-back').classList.add('hidden'); return; }
+  if(WIDX>=wDeck.length) WIDX=0;
+  const w=wDeck[WIDX];
+  $('w-jp').textContent=w.jp;
+  $('w-read').textContent=w.kana+(w.roma?'  ·  '+w.roma:'');
+  $('w-ko').textContent=w.ko; $('w-tip').textContent=w.tip||'';
+  $('w-back').classList.add('hidden'); $('w-hint').textContent='카드를 눌러 뜻 보기';
+  $('w-cnt').textContent=(WIDX+1)+' / '+wDeck.length+' · '+SCOPE;
+}
+function wFlip(){
+  if(wDeck.length===0) return;
+  const b=$('w-back'), h=b.classList.contains('hidden');
+  b.classList.toggle('hidden', !h); $('w-hint').textContent=h?'다시 누르면 숨김':'카드를 눌러 뜻 보기';
+  if(h) speak(wDeck[WIDX].kana);
+}
+function wMove(s){ if(wDeck.length===0) return; WIDX=(WIDX+s+wDeck.length)%wDeck.length; renderWCard(); }
+function startWQuiz(){
+  let pool=scopeWords();
+  if(WQTYPE==='read') pool=pool.filter(hasKanji);
+  if(pool.length<4){ $('wq-jp').textContent='—'; $('wq-choices').innerHTML=''; $('wq-prog').textContent=''; $('wq-bar').style.width='0%'; $('wq-msg').textContent=(WQTYPE==='read'?'이 범위에 한자 단어가 4개 이상이어야 해요. (범위를 바꿔보세요)':'이 범위에 단어가 4개 이상이어야 퀴즈가 돼요.'); return; }
+  WQUIZ={ qs:shuffle(pool).slice(0,Math.min(10,pool.length)), i:0, score:0, locked:false, pool }; renderWQ();
+}
+function renderWQ(){
+  const q=WQUIZ.qs[WQUIZ.i]; WQUIZ.locked=false;
+  const key=(WQTYPE==='read')?'kana':'ko';
+  $('wq-jp').textContent=q.jp; $('wq-msg').textContent='';
+  $('wq-prog').textContent=(WQUIZ.i+1)+' / '+WQUIZ.qs.length+(WQTYPE==='read'?' · 읽기 고르기':' · 뜻 고르기');
+  $('wq-bar').style.width=(WQUIZ.i/WQUIZ.qs.length*100)+'%';
+  const wrongs=shuffle(WQUIZ.pool.filter(w=>w[key]!==q[key])).slice(0,3);
+  const box=$('wq-choices'); box.innerHTML='';
+  shuffle([q].concat(wrongs)).forEach(c=>{ const b=document.createElement('button'); b.textContent=c[key]; b.onclick=()=>wqAns(c,b,q); box.appendChild(b); });
+}
+function wqAns(choice,btn,q){
+  if(WQUIZ.locked) return; WQUIZ.locked=true;
+  const key=(WQTYPE==='read')?'kana':'ko';
+  const correct=(choice[key]===q[key]);
+  Array.from($('wq-choices').children).forEach(b=>{ b.disabled=true; if(b.textContent===q[key]) b.classList.add('correct'); });
+  if(!correct) btn.classList.add('wrong');
+  const w=DB.words.find(x=>x.id===q.id);
+  if(w){ if(correct){ w.ok++; w.box=Math.min(5,w.box+1);} else { w.ng++; w.box=1;} w.wrong=!correct; w.next=now()+INTERVAL[w.box]*86400000; bump(w); }
+  save();
+  $('wq-msg').textContent=correct?'⭕ 정답!':'❌ 정답: '+(WQTYPE==='read'?q.kana:q.ko);
+  speak(WQTYPE==='read'?choice.kana:q.kana);
+  if(correct) WQUIZ.score++;
+  setTimeout(()=>{ WQUIZ.i++; if(WQUIZ.i<WQUIZ.qs.length) renderWQ(); else { $('wq-jp').textContent='🎉'; $('wq-choices').innerHTML=''; $('wq-prog').textContent='완료'; $('wq-bar').style.width='100%'; $('wq-msg').textContent=WQUIZ.score+' / '+WQUIZ.qs.length; } }, correct?650:1300);
+}
+function renderWList(){
+  const arr=scopeWords();
+  $('wl-cnt').textContent=arr.length;
+  const box=$('wl-body');
+  if(arr.length===0){ box.innerHTML='<p class="muted">단어가 없어요.</p>'; return; }
+  box.innerHTML=arr.map(w=>
+    '<div class="item"><div class="w"><b>'+esc(w.jp)+'</b><small>'+esc(w.kana)+(w.roma?' · '+esc(w.roma):'')+' · '+esc(w.ko)+'</small></div>'+
+    '<button onclick="speak(\''+esc(w.kana)+'\')">🔊</button>'+
+    '<button onclick="editWord('+w.id+')">✏️</button>'+
+    '<button onclick="delWord('+w.id+')">🗑️</button></div>'
+  ).join('');
+}
+function addWord(){
+  const jp=$('a-jp').value.trim(), kana=$('a-kana').value.trim(), ko=$('a-ko').value.trim(), roma=$('a-roma').value.trim();
+  if(!jp||!kana||!ko){ $('a-msg').textContent='일본어·히라가나·뜻은 꼭 넣어주세요.'; return; }
+  DB.words.push({ id:newId(), jp, kana, roma, ko, tip:'', theme:'내 단어', track:/[一-鿿]/.test(jp)?'kanji':'kana', box:1, ok:0, ng:0, next:0, seed:false });
+  save();
+  $('a-jp').value=''; $('a-kana').value=''; $('a-ko').value=''; $('a-roma').value='';
+  $('a-msg').textContent='✅ 추가됐어요! (전체 '+DB.words.length+'개)';
+  $('a-jp').focus();
+}
+function delWord(id){ if(!confirm('이 단어를 지울까요?')) return; DB.words=DB.words.filter(w=>w.id!==id); save(); buildThemePick(); renderWList(); }
+function editWord(id){
+  const w=DB.words.find(x=>x.id===id); if(!w) return;
+  const jp=prompt('일본어:',w.jp); if(jp===null) return;
+  const kana=prompt('히라가나 읽기:',w.kana); if(kana===null) return;
+  const ko=prompt('뜻:',w.ko); if(ko===null) return;
+  const roma=prompt('한글 발음(선택):',w.roma||''); if(roma===null) return;
+  w.jp=jp.trim()||w.jp; w.kana=kana.trim()||w.kana; w.ko=ko.trim()||w.ko; w.roma=roma.trim();
+  save(); renderWList();
+}
+
+/* ============ 문법 ============ */
+let GMODE='group', GG=null, GCKIND='masu', GCIDX=0, GPIDX=0;
+const GHELP={ group:'동사를 보고 몇 그룹인지 맞혀보세요. (する·くる=3그룹 / る앞이 이·에소리=2그룹 / 나머지=1그룹)', conj:'기본형을 ます형·ない형으로 바꾸는 연습이에요. 카드를 넘겨보세요.', point:'N5 필수 문형 9개예요. 뜻과 예문을 카드로 익혀요.', adj:'형용사(い·な)를 여러 형태로 바꾸는 퀴즈예요. 정중형·부정·과거·연결·부사형을 연습해요.', sent:'문장의 빈칸에 알맞은 말을 고르는 시험 형식 퀴즈예요. (JLPT もんだい1)' };
+function startGMode(){
+  ['group','conj','point','adj','sent'].forEach(m=> $('gm-'+m).classList.toggle('hidden', m!==GMODE));
+  document.querySelectorAll('#g-mode button').forEach(b=> b.classList.toggle('on', b.dataset.m===GMODE));
+  $('g-help').textContent=GHELP[GMODE];
+  if(GMODE==='group') ggNext();
+  else if(GMODE==='conj'){ GCIDX=0; renderGC(); }
+  else if(GMODE==='point'){ GPIDX=0; renderGP(); }
+  else if(GMODE==='adj') gaNext();
+  else gsStart();
+}
+function allGroupVerbs(){ const a=[]; ['1','2','3'].forEach(g=> GRAMMAR.groups[g].forEach(v=> a.push({kana:v[0],ko:v[1],g}))); return a; }
+function ggNext(){
+  const v=shuffle(allGroupVerbs())[0]; GG=v;
+  $('gg-jp').textContent=v.kana; $('gg-ko').textContent=v.ko; $('gg-msg').textContent='';
+}
+function ggAns(g){
+  if(!GG) return;
+  $('gg-msg').textContent=(g===GG.g)?'⭕ 맞아요! '+GG.g+'그룹':'❌ 정답은 '+GG.g+'그룹';
+  speak(GG.kana);
+}
+function renderGC(){
+  const arr=GRAMMAR[GCKIND]; if(GCIDX>=arr.length) GCIDX=0;
+  const it=arr[GCIDX];
+  $('gc-front').textContent=it[0]+'  ('+it[2].replace(/(합니다|않는다)$/,'')+')  →  '+(GCKIND==='masu'?'ます형?':'ない형?');
+  $('gc-form').textContent=it[1]; $('gc-ko').textContent=it[2]+' ('+it[3]+'그룹)';
+  $('gc-back').classList.add('hidden'); $('gc-hint').textContent='카드를 눌러 정답 보기';
+  $('gc-cnt').textContent=(GCIDX+1)+' / '+arr.length;
+}
+function gcFlip(){ const b=$('gc-back'),h=b.classList.contains('hidden'); b.classList.toggle('hidden',!h); if(h){ const it=GRAMMAR[GCKIND][GCIDX]; speak(it[1]); } }
+function gcMove(s){ const arr=GRAMMAR[GCKIND]; GCIDX=(GCIDX+s+arr.length)%arr.length; renderGC(); }
+function renderGP(){
+  const p=GRAMMAR.points; if(GPIDX>=p.length) GPIDX=0; const it=p[GPIDX];
+  $('gp-form').textContent=it[0]; $('gp-mean').textContent=it[1];
+  $('gp-ex').innerHTML=esc(it[2])+'<br><span class="muted">'+esc(it[3])+'</span>';
+  $('gp-back').classList.add('hidden'); $('gp-hint').textContent='카드를 눌러 뜻·예문 보기';
+  $('gp-cnt').textContent=(GPIDX+1)+' / '+p.length;
+}
+function gpFlip(){ const b=$('gp-back'),h=b.classList.contains('hidden'); b.classList.toggle('hidden',!h); if(h) speak(GRAMMAR.points[GPIDX][2]); }
+function gpMove(s){ const p=GRAMMAR.points; GPIDX=(GPIDX+s+p.length)%p.length; renderGP(); }
+
+/* ---- 형용사 활용 퀴즈 ---- */
+const ADJ={
+  i:[['おいしい','맛있다'],['たかい','비싸다·높다'],['やすい','싸다'],['あたらしい','새롭다'],['ふるい','오래되다'],['おおきい','크다'],['ちいさい','작다'],['あつい','덥다'],['さむい','춥다'],['たのしい','즐겁다'],['むずかしい','어렵다'],['いそがしい','바쁘다'],['わかい','젊다'],['ながい','길다'],['はやい','빠르다·이르다']],
+  na:[['げんき','건강함·활기참'],['しずか','조용함'],['にぎやか','번화함'],['ゆうめい','유명함'],['しんせつ','친절함'],['べんり','편리함'],['ひま','한가함'],['きれい','예쁨·깨끗함'],['すき','좋아함'],['きらい','싫어함'],['じょうぶ','튼튼함'],['かんたん','간단함']]
+};
+function formsI(k){ const s=k.slice(0,-1); return [
+  ['정중 현재 (~합니다)', s+'いです'],
+  ['현재 부정 (~지 않다)', s+'くない'],
+  ['정중 현재부정 (~지 않습니다)', s+'くないです'],
+  ['과거 (~였다)', s+'かった'],
+  ['정중 과거 (~였습니다)', s+'かったです'],
+  ['과거 부정 (~지 않았다)', s+'くなかった'],
+  ['연결 (~고/~서)', s+'くて'],
+  ['부사 (~하게)', s+'く'] ]; }
+function formsNA(k){ const s=k; return [
+  ['명사 수식 (~한 N)', s+'な'],
+  ['정중 현재 (~합니다)', s+'です'],
+  ['현재 부정 (~지 않다)', s+'じゃない'],
+  ['정중 현재부정 (~지 않습니다)', s+'じゃないです'],
+  ['과거 (~였다)', s+'だった'],
+  ['정중 과거 (~였습니다)', s+'でした'],
+  ['과거 부정 (~지 않았다)', s+'じゃなかった'],
+  ['연결 (~고/~서)', s+'で'],
+  ['부사 (~하게)', s+'に'] ]; }
+let GAKIND='i', GA=null;
+function gaPool(){ const i=ADJ.i.map(a=>({kana:a[0],ko:a[1],type:'i'})); const na=ADJ.na.map(a=>({kana:a[0],ko:a[1],type:'na'})); return GAKIND==='i'?i:GAKIND==='na'?na:i.concat(na); }
+function gaNext(){
+  const a=shuffle(gaPool())[0];
+  const forms=a.type==='i'?formsI(a.kana):formsNA(a.kana);
+  const idx=Math.floor(Math.random()*forms.length); const target=forms[idx];
+  const others=shuffle(forms.filter((f,i)=>i!==idx)).slice(0,3);
+  const choices=shuffle([target].concat(others));
+  GA={ answer:target[1], kana:a.kana };
+  $('ga-jp').textContent=a.kana; $('ga-ko').textContent=a.ko+' ('+(a.type==='i'?'い':'な')+'형용사)';
+  $('ga-target').textContent='「'+target[0]+'」 형태는?'; $('ga-msg').textContent='';
+  const box=$('ga-choices'); box.innerHTML='';
+  choices.forEach(c=>{ const b=document.createElement('button'); b.textContent=c[1]; b.onclick=()=>gaAns(c[1],b); box.appendChild(b); });
+}
+function gaAns(val,btn){
+  if(!GA) return;
+  Array.from($('ga-choices').children).forEach(b=>{ b.disabled=true; if(b.textContent===GA.answer) b.classList.add('correct'); });
+  if(val!==GA.answer) btn.classList.add('wrong');
+  $('ga-msg').textContent=(val===GA.answer)?'⭕ 정답!':'❌ 정답: '+GA.answer;
+  speak(val);
+}
+
+/* ---- 문장 퀴즈 (빈칸 채우기) ---- */
+let SENTI=0, SENT=null;
+function gsStart(){ SENTI=0; gsRender(); }
+function gsNext(){ SENTI=(SENTI+1)%GRAMMAR.sent.length; gsRender(); }
+function gsFull(it){ return it[0].replace('（　）', it[1][it[2]]); }
+function gsRender(){
+  const it=GRAMMAR.sent[SENTI];
+  SENT={ ans:it[2], say:gsFull(it) };
+  $('gs-prog').textContent=(SENTI+1)+' / '+GRAMMAR.sent.length;
+  $('gs-q').textContent=it[0];
+  $('gs-msg').textContent=''; $('gs-exp').innerHTML='';
+  const box=$('gs-choices'); box.innerHTML='';
+  it[1].forEach((c,i)=>{ const b=document.createElement('button'); b.textContent=(i+1)+'. '+c; b.onclick=()=>gsAns(i,b,it); box.appendChild(b); });
+}
+function gsAns(i,btn,it){
+  const correct=(i===it[2]);
+  Array.from($('gs-choices').children).forEach((b,j)=>{ b.disabled=true; if(j===it[2]) b.classList.add('correct'); });
+  if(!correct) btn.classList.add('wrong');
+  $('gs-msg').textContent=correct?'⭕ 정답!':'❌ 정답: '+(it[2]+1)+'번';
+  const full=gsFull(it);
+  $('gs-exp').innerHTML='<b style="color:#1f2328;font-size:16px">'+esc(full)+'</b>'+
+    '<br>🗣 '+esc(it[4]||'')+
+    '<br>💬 '+esc(it[5]||'')+
+    '<br><span style="color:#6b7280">📘 '+esc(it[3]||'')+'</span>';
+  speak(full);
+}
+
+/* ============ 통계 ============ */
+function renderStats(){
+  $('s-ktot').textContent=DB.words.filter(w=>w.track==='kana').length+'개';
+  $('s-jtot').textContent=DB.words.filter(w=>w.track==='kanji').length+'개';
+  $('s-today').textContent=todayK()+' / '+todayJ();
+  let ok=0,ng=0; DB.words.forEach(w=>{ ok+=w.ok; ng+=w.ng; });
+  $('s-rate').textContent=(ok+ng)?Math.round(ok/(ok+ng)*100)+'%':'-';
+  $('s-due').textContent=DB.words.filter(w=>(w.ok+w.ng)>0&&(w.next||0)<=now()).length+'개';
+  $('s-wrong').textContent=wrongWords().length+'개';
+  const left=Math.ceil((new Date(EXAM)-new Date())/86400000);
+  $('s-dday').textContent='D-'+left; $('s-dnote').textContent=EXAM+' 시험 기준';
+}
+
+/* ============ 설정 ============ */
+function exportData(){
+  const blob=new Blob([JSON.stringify(DB,null,2)],{type:'application/json'});
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='n5-vocab-'+todayKey()+'.json'; a.click(); URL.revokeObjectURL(a.href);
+  $('backup-msg').textContent='✅ 내보냈어요';
+}
+function importData(e){
+  const f=e.target.files[0]; if(!f) return; const r=new FileReader();
+  r.onload=()=>{ try{ const d=JSON.parse(r.result); if(!d.words) throw 0; DB=Object.assign(DB,d); save(); $('backup-msg').textContent='✅ 불러왔어요 ('+DB.words.length+'개)'; }catch(_){ $('backup-msg').textContent='❌ 파일을 읽을 수 없어요'; } };
+  r.readAsText(f); e.target.value='';
+}
+function reseed(){ const n=seedWords(true); $('seed-msg').textContent='✅ '+n+'개 채웠어요 (전체 '+DB.words.length+'개)'; }
+function resetData(){ if(!confirm('정말 모든 단어를 지울까요? 되돌릴 수 없어요.')) return; DB={ version:3, seeded:false, words:[], dailyK:{}, dailyJ:{} }; save(); alert('전체 삭제했어요.'); location.reload(); }
+
+/* ============ 시작 ============ */
+load();
+if(!DB.seeded && DB.words.length===0) seedWords();
+document.querySelectorAll('#w-mode button').forEach(b=> b.onclick=()=>{ WMODE=b.dataset.m; startWMode(); });
+document.querySelectorAll('#wq-type button').forEach(b=> b.onclick=()=>{ WQTYPE=b.dataset.t; document.querySelectorAll('#wq-type button').forEach(x=>x.classList.toggle('on',x===b)); startWQuiz(); });
+document.querySelectorAll('#g-mode button').forEach(b=> b.onclick=()=>{ GMODE=b.dataset.m; startGMode(); });
+document.querySelectorAll('#gc-kind button').forEach(b=> b.onclick=()=>{ GCKIND=b.dataset.k; document.querySelectorAll('#gc-kind button').forEach(x=>x.classList.toggle('on',x===b)); GCIDX=0; renderGC(); });
+document.querySelectorAll('#ga-kind button').forEach(b=> b.onclick=()=>{ GAKIND=b.dataset.k; document.querySelectorAll('#ga-kind button').forEach(x=>x.classList.toggle('on',x===b)); gaNext(); });
+if('speechSynthesis' in window) speechSynthesis.getVoices();
+renderTodayHome();
+</script>
+</body>
+</html>
